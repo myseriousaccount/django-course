@@ -169,4 +169,4 @@ python manage.py runserver         # 6. запустити сервер
 - `python manage.py runserver` — сервер розробки (аналог `flask run`), за замовчуванням `127.0.0.1:8000`; порт і хост можна змінити.
 - `migrate` — створює базові таблиці й `db.sqlite3`; `pip freeze > requirements.txt` фіксує залежності, а `pip install -r requirements.txt` їх відновлює.
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/intro/tutorial01/" target="_blank" rel="noopener">Writing your first Django app <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/intro/tutorial01/" target="_blank" rel="noopener">Writing your first Django app <i class="bi bi-box-arrow-up-right"></i></a></div></div>

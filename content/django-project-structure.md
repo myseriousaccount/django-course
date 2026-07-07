@@ -152,4 +152,4 @@ templates/
 - Структура «вмикається» через `settings.py` (`INSTALLED_APPS`, `ROOT_URLCONF`, `TEMPLATES`) — папка без запису в settings не працює.
 - Шаблони у `templates/` кладуть у підпапки за іменем модуля, щоб уникнути конфліктів імен.
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/ref/applications/" target="_blank" rel="noopener">Applications <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/ref/applications/" target="_blank" rel="noopener">Applications <i class="bi bi-box-arrow-up-right"></i></a></div></div>

@@ -124,4 +124,4 @@ INSTALLED_APPS = [
 - На відміну від Flask, **структура задана конвенціями** — є очікуваний «правильний» спосіб, менше рішень щоразу.
 - Django обирають, коли є БД, користувачі й адмінка (блог, магазин, каталог); Flask — для малого й нестандартного.
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/intro/overview/" target="_blank" rel="noopener">Django at a glance <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/intro/overview/" target="_blank" rel="noopener">Django at a glance <i class="bi bi-box-arrow-up-right"></i></a></div></div>

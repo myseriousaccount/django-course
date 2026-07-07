@@ -170,7 +170,7 @@ urlpatterns = [
 
 Так `shop:detail` і `blog:detail` більше не сплутати.
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/topics/http/urls/" target="_blank" rel="noopener">URL dispatcher <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/http/urls/" target="_blank" rel="noopener">URL dispatcher <i class="bi bi-box-arrow-up-right"></i></a></div></div>
 
 ## Типові помилки / Нюанси (конвенції)
 
@@ -207,4 +207,4 @@ urlpatterns = [
 - `name=` дозволяє посилатися на маршрут через `{% url %}` / `reverse` без хардкоду адреси (як `url_for` у Flask); `app_name` + `namespace` рятують від конфлікту однакових імен.
 - Конвенції: кінцевий `/`, `from . import views` замість `import *`, конкретні маршрути вище за загальні.
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/topics/http/urls/" target="_blank" rel="noopener">URL dispatcher <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/http/urls/" target="_blank" rel="noopener">URL dispatcher <i class="bi bi-box-arrow-up-right"></i></a></div></div>

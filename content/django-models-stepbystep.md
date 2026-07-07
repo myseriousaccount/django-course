@@ -65,7 +65,7 @@ is_published = models.BooleanField(default=False)    # True/False
 rating = models.PositiveSmallIntegerField()          # ціле число 1..5 тощо
 ```
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/topics/db/models/" target="_blank" rel="noopener">Models <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/db/models/" target="_blank" rel="noopener">Models <i class="bi bi-box-arrow-up-right"></i></a></div></div>
 
 ### 4. `def __str__(self):` — обов'язково
 
@@ -95,7 +95,7 @@ class Meta:
 
 **Навіщо.** Без `ordering` порядок записів непередбачуваний. Без `verbose_name_plural` Django механічно додасть `s` і напише «Posts» замість «Статті».
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/topics/db/models/" target="_blank" rel="noopener">Models <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/db/models/" target="_blank" rel="noopener">Models <i class="bi bi-box-arrow-up-right"></i></a></div></div>
 
 ### 6. Методи моделі — «товсті моделі» (best practice)
 
@@ -108,7 +108,7 @@ def is_draft(self):
 
 **Навіщо.** «Товста модель, тонкий view» — логіка живе поруч із даними, її легко перевикористати й протестувати.
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/topics/db/models/" target="_blank" rel="noopener">Models <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/db/models/" target="_blank" rel="noopener">Models <i class="bi bi-box-arrow-up-right"></i></a></div></div>
 
 ### 7. Застосувати до БД: `makemigrations` → `migrate`
 
@@ -382,7 +382,7 @@ class Order(TimeStampedModel):
 
 > <i class="bi bi-info-circle"></i> Правило вибору: **простий `ManyToManyField`** — коли зв'язок «голий» (книга↔жанр). **`through`-модель** — коли на самому зв'язку є дані (скільки штук, за якою ціною). Щойно з'явилося запитання «а де зберегти властивість *зв'язку*?» — тобі потрібна проміжна модель.
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/topics/db/models/" target="_blank" rel="noopener">Models <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/db/models/" target="_blank" rel="noopener">Models <i class="bi bi-box-arrow-up-right"></i></a></div></div>
 
 ## `related_name` і зворотний доступ у запитах
 
@@ -508,4 +508,4 @@ class Meta:
 - `register` стосовно моделі = підключення до **адмінки**, крок опційний і на таблицю не впливає.
 - «No changes detected» при явних змінах — майже завжди сигнал, що застосунок забули додати в `INSTALLED_APPS`.
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/topics/db/models/" target="_blank" rel="noopener">Models <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/db/models/" target="_blank" rel="noopener">Models <i class="bi bi-box-arrow-up-right"></i></a></div></div>

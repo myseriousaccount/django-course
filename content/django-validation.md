@@ -440,4 +440,4 @@ def create_post(request):
 - **Чотири механізми форми:** валідатори полів (`validators=[...]`) → `clean_<field>()` (одне поле) → `clean()` (звʼязок між полями) → `AUTH_PASSWORD_VALIDATORS` (паролі); файли перевіряй за розміром і розширенням.
 - **Best practice:** форма — єдине джерело правил; серверні помилки показуй через `field.errors` / `non_field_errors` / `messages`.
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/ref/forms/validation/" target="_blank" rel="noopener">Form and field validation <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/ref/forms/validation/" target="_blank" rel="noopener">Form and field validation <i class="bi bi-box-arrow-up-right"></i></a></div></div>

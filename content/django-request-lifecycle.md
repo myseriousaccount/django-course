@@ -156,4 +156,4 @@ def timing_middleware(get_response):
 - `request.user` і `request.session` з'являються саме завдяки відповідним middleware.
 - **Порядок** у `MIDDLEWARE` важливий: запит — згори вниз, відповідь — знизу вгору; залежності мають стояти раніше (`sessions` перед `auth`).
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/topics/http/middleware/" target="_blank" rel="noopener">Middleware <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/http/middleware/" target="_blank" rel="noopener">Middleware <i class="bi bi-box-arrow-up-right"></i></a></div></div>

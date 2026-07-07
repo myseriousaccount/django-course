@@ -162,4 +162,4 @@ Alpine працює **в браузері**, а дані спершу готує
 - Підключення — один `<script defer>` із CDN.
 - Дані з Django: маленькі — прямо в `x-data`; динамічні — `fetch` → `JsonResponse` (з CSRF). Не конфліктує з `{{ }}` Django.
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://alpinejs.dev/" target="_blank" rel="noopener">alpinejs.dev <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://alpinejs.dev/" target="_blank" rel="noopener">alpinejs.dev <i class="bi bi-box-arrow-up-right"></i></a></div></div>

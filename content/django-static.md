@@ -148,4 +148,4 @@ class Book(models.Model):
 - **MEDIA** (`MEDIA_URL`/`MEDIA_ROOT`) — окремо для файлів, що завантажують користувачі (аватар, фото товару, обкладинка книги); звертаються через `{{ obj.field.url }}`, не через `{% static %}`.
 - `django.contrib.staticfiles` — вбудований app, що дає тег `{% static %}` і `collectstatic`.
 
-<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/howto/static-files/" target="_blank" rel="noopener">Managing static files <i class="bi bi-box-arrow-up-right"></i></a></div></div>
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/howto/static-files/" target="_blank" rel="noopener">Managing static files <i class="bi bi-box-arrow-up-right"></i></a></div></div>
