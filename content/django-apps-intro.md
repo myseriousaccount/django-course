@@ -124,4 +124,4 @@ root/ (проєкт)
 - App обов'язково треба **зареєструвати** в `INSTALLED_APPS`, інакше Django його не бачить (типова причина «no changes» у міграціях).
 - Концептуально app = Flask-blueprint, тільки вбудований у фреймворк.
 
-> <i class="bi bi-book"></i> Детальніше про застосунки — у розділі «Applications» документації Django (docs.djangoproject.com).
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/ref/applications/" target="_blank" rel="noopener">Applications <i class="bi bi-box-arrow-up-right"></i></a></div></div>

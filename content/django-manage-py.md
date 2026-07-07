@@ -155,4 +155,4 @@ python manage.py createsuperuser
 - `makemigrations` пише план змін БД, `migrate` його виконує — два окремі кроки.
 - `startproject` → через `django-admin`; усе решта → через `manage.py`.
 
-> <i class="bi bi-book"></i> Повний перелік команд і їхні параметри — у розділі «django-admin and manage.py» офіційної документації (docs.djangoproject.com).
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/ref/django-admin/" target="_blank" rel="noopener">django-admin and manage.py <i class="bi bi-box-arrow-up-right"></i></a></div></div>

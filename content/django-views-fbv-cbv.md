@@ -212,4 +212,4 @@ class BookList(ListView):
 - Налаштовуєш CBV, перевизначаючи `get_queryset()` (який набір) і `get_context_data()` (що ще в шаблон).
 - Вибір не абсолютний: типовий CRUD → CBV (менше коду), нестандартне/навчання → FBV (прозоріше); проєкти часто змішують.
 
-> <i class="bi bi-book"></i> Повний перелік generic views і їхніх методів — у доці: docs.djangoproject.com → «Class-based views» і «Built-in class-based generic views».
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/topics/class-based-views/" target="_blank" rel="noopener">Class-based views <i class="bi bi-box-arrow-up-right"></i></a></div></div>

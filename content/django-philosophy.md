@@ -122,4 +122,4 @@ Django міг би зробити `request` глобальним (як це вл
 - Усе працює в межах патерну **MTV**: Model — дані, Template — відображення, View — логіка.
 - Головний зсув після Flask: структуру не вигадуєш, а вивчаєш конвенції — і це пришвидшує розробку.
 
-> <i class="bi bi-book"></i> Першоджерело — офіційний документ «Design philosophies» у документації Django (docs.djangoproject.com), де ці принципи описані словами авторів фреймворку.
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/misc/design-philosophies/" target="_blank" rel="noopener">Design philosophies <i class="bi bi-box-arrow-up-right"></i></a></div></div>

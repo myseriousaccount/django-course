@@ -166,4 +166,4 @@ document.getElementById('q').addEventListener('input', async (e) => {
 - Щоб не писати гори JS — бери **htmx** (Django повертає HTML) або **Alpine.js** (реактивність в атрибутах); React/Vue — лише для повноцінних SPA.
 - Безпека й валідація — **завжди на сервері**, ніколи не покладайся на JS.
 
-> <i class="bi bi-book"></i> Деталі — у документації Django: «How to use Django's CSRF protection» (розділ про AJAX) та `JsonResponse` у «Request and response objects» (docs.djangoproject.com).
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/ref/csrf/" target="_blank" rel="noopener">CSRF protection <i class="bi bi-box-arrow-up-right"></i></a></div></div>

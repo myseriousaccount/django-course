@@ -199,4 +199,4 @@ INSTALLED_APPS = [
 - Багато «магії» (`request.user`, `request.session`, `{% static %}`, `/admin`) — це робота цих apps.
 - Зовнішні бібліотеки (DRF тощо) підключаються тим самим способом: `pip install` → рядок у `INSTALLED_APPS`.
 
-> <i class="bi bi-book"></i> Перелік вбудованих contrib-apps і їхні можливості — у доці: docs.djangoproject.com → «contrib packages».
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/ref/contrib/" target="_blank" rel="noopener">contrib packages <i class="bi bi-box-arrow-up-right"></i></a></div></div>

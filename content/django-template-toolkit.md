@@ -250,4 +250,4 @@
 - **Фільтри** (`|`) форматують значення при виводі: `date`, `default`, `length`, `truncatewords`, `floatformat`, `yesno`, `timesince`, `pluralize`, `join`, `linebreaks`, `safe`; їх можна ланцюжити.
 - Синтаксис близький до **Jinja2**, але це окремий рушій: у Django немає викликів функцій із дужками, а фільтри беруть аргумент через двокрапку. Складну логіку тримай у view, а не в HTML.
 
-> <i class="bi bi-book"></i> Повний перелік вбудованих тегів і фільтрів — у розділі «Built-in template tags and filters» документації Django (docs.djangoproject.com).
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/ref/templates/builtins/" target="_blank" rel="noopener">Built-in tags and filters <i class="bi bi-box-arrow-up-right"></i></a></div></div>

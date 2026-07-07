@@ -234,4 +234,4 @@ urlpatterns = [
 - `wsgi.py` / `asgi.py` — точки входу для бойового сервера; у розробці не чіпаєш.
 - `manage.py` (рівнем вище) — пульт для команд; читає `settings.py`.
 
-> <i class="bi bi-book"></i> Повний довідник усіх параметрів `settings.py` — у розділі «Settings» офіційної документації (docs.djangoproject.com).
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/ref/settings/" target="_blank" rel="noopener">Settings reference <i class="bi bi-box-arrow-up-right"></i></a></div></div>

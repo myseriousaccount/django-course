@@ -242,4 +242,4 @@ def movie_list(request):
 - У шаблоні ітеруй `page`, будуй посилання через `?page={{ page.next_page_number }}` з перевіркою `has_next`/`has_previous`; повний перелік номерів — через `page.paginator.page_range`.
 - Список під пагінацію **впорядковуй** (`order_by`), а інші GET-параметри (`?q=`) при потребі зберігай у посиланні.
 
-> <i class="bi bi-book"></i> Деталі — у розділі «Pagination» документації Django (docs.djangoproject.com), де описано і `Paginator`, і клас `Page`.
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/topics/pagination/" target="_blank" rel="noopener">Pagination <i class="bi bi-box-arrow-up-right"></i></a></div></div>

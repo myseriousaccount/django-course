@@ -154,3 +154,48 @@ textarea[spellcheck="false"] { line-height: 1.6; tab-size: 4; }
     .prose h1 { font-size: 1.6rem; }
     .prose h2 { font-size: 1.3rem; }
 }
+
+/* ===== Блок «Офіційна документація» (клікабельне джерело в кінці уроку) ===== */
+.dj-docs {
+    display: flex;
+    gap: 0.85rem;
+    align-items: center;
+    margin: 2.2em 0 0.5em;
+    padding: 0.95rem 1.15rem;
+    background: #eaf5ef;
+    border: 1px solid rgba(12, 75, 51, 0.15);
+    border-left: 4px solid #44b78b;
+    border-radius: 0.75rem;
+}
+.dark .dj-docs {
+    background: rgb(9 46 32 / 0.5);
+    border-color: rgba(68, 183, 139, 0.2);
+    border-left-color: #44b78b;
+}
+.dj-docs > i {
+    color: #0c4b33;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+.dark .dj-docs > i { color: #86ccab; }
+.dj-docs > div { display: flex; flex-direction: column; line-height: 1.35; }
+.dj-docs .dj-docs-title {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #0a3d2a;
+    font-weight: 700;
+    margin-bottom: 0.1rem;
+}
+.dark .dj-docs .dj-docs-title { color: #86ccab; }
+.dj-docs a {
+    font-weight: 600;
+    color: #0c4b33;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.dark .dj-docs a { color: #44b78b; }
+.dj-docs a:hover { text-decoration: underline; }
+.dj-docs a i { font-size: 0.8em; }

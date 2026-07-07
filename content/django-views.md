@@ -234,4 +234,4 @@ View сама по собі сторінки не дасть. Потрібні *
 - Патерн «дістати з БД → передати в шаблон» однаковий для будь-якої моделі (блог, магазин, бібліотека).
 - Щоб сторінка ожила, потрібні **чотири** речі: view + шаблон + маршрут + сервер.
 
-> <i class="bi bi-book"></i> Деталі — розділи «Writing views» і «Request and response objects» у документації Django (docs.djangoproject.com).
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/topics/http/views/" target="_blank" rel="noopener">Writing views <i class="bi bi-box-arrow-up-right"></i></a></div></div>

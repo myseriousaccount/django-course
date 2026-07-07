@@ -284,4 +284,4 @@ def post_feed(request):
 - Запис: `.create()`, конструктор + `.save()`, `bulk_create()`; зміна `obj.save()` / масовий `queryset.update()`; видалення `.delete()` (масові операції — одна SQL-команда, але без сигналів).
 - `Q` — умови **АБО** (`|`, `&`, `~`); `F` — посилання на поле в самій БД; `aggregate`/`annotate` — підрахунки на боці бази; `values`/`values_list` — лише потрібні поля.
 
-> <i class="bi bi-book"></i> Повний довідник — розділи «Making queries» та «QuerySet API reference» в офіційній документації (docs.djangoproject.com).
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/topics/db/queries/" target="_blank" rel="noopener">Making queries <i class="bi bi-box-arrow-up-right"></i></a></div></div>

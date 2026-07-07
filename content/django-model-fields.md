@@ -277,4 +277,4 @@ class Product(models.Model):
 - **`on_delete`**: `CASCADE` (видаляти разом), `PROTECT` (заборонити), `SET_NULL` (обнулити, потребує `null=True`), `SET_DEFAULT`.
 - **`class Meta`** задає метадані (`ordering`, `verbose_name`, `unique_together`, `indexes`), а **`__str__`** робить об'єкт читабельним в адмінці й шелі — додавай його завжди.
 
-> <i class="bi bi-book"></i> Повний перелік типів полів і всіх їхніх опцій — у розділі «Model field reference» офіційної документації Django (docs.djangoproject.com), а зв'язки детально описано в «Related objects reference».
+<div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">ÐÑÑÑÑÐ¹Ð½Ð° Ð´Ð¾ÐºÑÐ¼ÐµÐ½ÑÐ°ÑÑÑ</span><a href="https://docs.djangoproject.com/en/stable/ref/models/fields/" target="_blank" rel="noopener">Model field reference <i class="bi bi-box-arrow-up-right"></i></a></div></div>
