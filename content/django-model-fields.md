@@ -51,14 +51,14 @@ class Post(models.Model):
 | `JSONField` | структура даних (dict/list) | зберігає JSON |
 | `ImageField` / `FileField` | картинки / файли | `upload_to='...'` |
 
-> 💡 `DecimalField` проти `FloatField`: для грошей завжди бери `DecimalField`. `float` округлює неточно (класична проблема з `0.1 + 0.2`), а `Decimal` зберігає точне значення. `FloatField` доречний для вимірювань, де мікропохибка не критична (рейтинг, вага).
+> <i class="bi bi-info-circle"></i> `DecimalField` проти `FloatField`: для грошей завжди бери `DecimalField`. `float` округлює неточно (класична проблема з `0.1 + 0.2`), а `Decimal` зберігає точне значення. `FloatField` доречний для вимірювань, де мікропохибка не критична (рейтинг, вага).
 
 **Про дати — `auto_now` vs `auto_now_add`:**
 
 - `auto_now_add=True` — час ставиться **один раз**, у момент створення об'єкта. Ідеально для «коли створено» (`Order.created_at`).
 - `auto_now=True` — час оновлюється **при кожному** збереженні. Ідеально для «коли востаннє змінено» (`Post.updated_at`).
 
-> ⚠️ `ImageField` вимагає встановленої бібліотеки **Pillow** (`pip install Pillow`), інакше міграція впаде з помилкою.
+> <i class="bi bi-exclamation-triangle"></i> `ImageField` вимагає встановленої бібліотеки **Pillow** (`pip install Pillow`), інакше міграція впаде з помилкою.
 
 **Навіщо.** Правильний тип поля — це безкоштовна валідація й коректна схема БД. `EmailField` сам перевірить формат, `DecimalField` не зіпсує ціну округленням, `SlugField` гарантує «чистий» URL, `PositiveIntegerField` не пропустить від'ємну кількість.
 
@@ -104,7 +104,7 @@ class Order(models.Model):
 > **`null`** — про **базу даних**: чи може стовпець містити `NULL`.
 > **`blank`** — про **валідацію**: чи можна залишити поле порожнім у формі (адмінка, `ModelForm`).
 
-🧠 Аналогія: `null` — це «чи дозволено порожню комірку в таблиці Excel», а `blank` — «чи дозволено натиснути *Зберегти*, не заповнивши поле в анкеті». Це два різні рівні.
+<i class="bi bi-lightbulb"></i> Аналогія: `null` — це «чи дозволено порожню комірку в таблиці Excel», а `blank` — «чи дозволено натиснути *Зберегти*, не заповнивши поле в анкеті». Це два різні рівні.
 
 Наслідки з цього:
 
@@ -121,7 +121,7 @@ class Order(models.Model):
   shipped_at = models.DateField(null=True, blank=True)  # ✅ дата може бути невідома
   ```
 
-> 💡 Просте правило: `blank` — майже завжди, коли поле необов'язкове у формі. `null` — додатково лише для **не-рядкових** полів.
+> <i class="bi bi-info-circle"></i> Просте правило: `blank` — майже завжди, коли поле необов'язкове у формі. `null` — додатково лише для **не-рядкових** полів.
 
 ## Зв'язки між моделями
 
@@ -158,7 +158,7 @@ class Post(models.Model):
 
   Без `related_name` Django створив би доступ `user.post_set.all()` — робоче, але менш читабельне.
 
-> 💡 Інший приклад того самого зв'язку: `Book.author = ForeignKey(Author, ...)` — багато книг одного автора; `Order.customer = ForeignKey(User, ...)` — багато замовлень одного клієнта. Патерн однаковий, домен різний.
+> <i class="bi bi-info-circle"></i> Інший приклад того самого зв'язку: `Book.author = ForeignKey(Author, ...)` — багато книг одного автора; `Order.customer = ForeignKey(User, ...)` — багато замовлень одного клієнта. Патерн однаковий, домен різний.
 
 ### ManyToManyField — «багато до багатьох»
 
@@ -182,7 +182,7 @@ movie.genres.all()            # усі жанри фільму
 sci_fi.movies.all()           # усі фільми цього жанру (через related_name)
 ```
 
-> 💡 Той самий зв'язок в інших доменах: `Post.tags = ManyToManyField(Tag)` — пости й теги; `Product.categories = ManyToManyField(Category)` — товар у кількох категоріях.
+> <i class="bi bi-info-circle"></i> Той самий зв'язок в інших доменах: `Post.tags = ManyToManyField(Tag)` — пости й теги; `Product.categories = ManyToManyField(Category)` — товар у кількох категоріях.
 
 ### OneToOneField — «один до одного»
 
@@ -204,9 +204,9 @@ class Profile(models.Model):
 
 Тепер `user.profile` дає профіль, а `profile.user` — користувача.
 
-🧠 Різниця трьох зв'язків одним реченням: `ForeignKey` — «у багатьох одна мама», `ManyToManyField` — «у багатьох багато знайомих», `OneToOneField` — «у кожного одна пара».
+<i class="bi bi-lightbulb"></i> Різниця трьох зв'язків одним реченням: `ForeignKey` — «у багатьох одна мама», `ManyToManyField` — «у багатьох багато знайомих», `OneToOneField` — «у кожного одна пара».
 
-> 💡 Використовуй `settings.AUTH_USER_MODEL` (а не імпорт `User` напряму) для будь-яких зв'язків із користувачем — так модель не зламається, якщо проєкт має кастомну модель користувача.
+> <i class="bi bi-info-circle"></i> Використовуй `settings.AUTH_USER_MODEL` (а не імпорт `User` напряму) для будь-яких зв'язків із користувачем — так модель не зламається, якщо проєкт має кастомну модель користувача.
 
 ## `class Meta` і метод `__str__`
 
@@ -259,15 +259,15 @@ class Product(models.Model):
 
 ## Типові помилки / Нюанси
 
-> ⚠️ **`CharField` без `max_length`** → помилка перевірки моделі. Для `CharField` довжина обов'язкова; безлімітний текст — це `TextField`.
+> <i class="bi bi-exclamation-triangle"></i> **`CharField` без `max_length`** → помилка перевірки моделі. Для `CharField` довжина обов'язкова; безлімітний текст — це `TextField`.
 
-> ⚠️ **`ForeignKey` без `on_delete`** → `TypeError`. Аргумент обов'язковий — Django змушує тебе свідомо обрати долю пов'язаних об'єктів.
+> <i class="bi bi-exclamation-triangle"></i> **`ForeignKey` без `on_delete`** → `TypeError`. Аргумент обов'язковий — Django змушує тебе свідомо обрати долю пов'язаних об'єктів.
 
-> ⚠️ **`null=True` на `CharField`/`TextField`** — уникай: два способи означати «пусто» (`''` і `NULL`). Для рядків став лише `blank=True`.
+> <i class="bi bi-exclamation-triangle"></i> **`null=True` на `CharField`/`TextField`** — уникай: два способи означати «пусто» (`''` і `NULL`). Для рядків став лише `blank=True`.
 
-> ⚠️ **`SET_NULL` без `null=True`** → міграція впаде: обнулити зв'язок неможливо, якщо поле не приймає `NULL`.
+> <i class="bi bi-exclamation-triangle"></i> **`SET_NULL` без `null=True`** → міграція впаде: обнулити зв'язок неможливо, якщо поле не приймає `NULL`.
 
-> 💡 Забула `__str__`? Об'єкти в адмінці й шелі будуть безіменні (`object (1)`). Додавай завжди.
+> <i class="bi bi-info-circle"></i> Забула `__str__`? Об'єкти в адмінці й шелі будуть безіменні (`object (1)`). Додавай завжди.
 
 ## Підсумок
 
@@ -277,4 +277,4 @@ class Product(models.Model):
 - **`on_delete`**: `CASCADE` (видаляти разом), `PROTECT` (заборонити), `SET_NULL` (обнулити, потребує `null=True`), `SET_DEFAULT`.
 - **`class Meta`** задає метадані (`ordering`, `verbose_name`, `unique_together`, `indexes`), а **`__str__`** робить об'єкт читабельним в адмінці й шелі — додавай його завжди.
 
-> 📖 Повний перелік типів полів і всіх їхніх опцій — у розділі «Model field reference» офіційної документації Django (docs.djangoproject.com), а зв'язки детально описано в «Related objects reference».
+> <i class="bi bi-book"></i> Повний перелік типів полів і всіх їхніх опцій — у розділі «Model field reference» офіційної документації Django (docs.djangoproject.com), а зв'язки детально описано в «Related objects reference».

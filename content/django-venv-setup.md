@@ -31,7 +31,7 @@ venv\Scripts\activate.bat
 
 Після активації перед рядком терміналу з'явиться `(venv)`. Це знак, що ти «всередині ящика» — усі `pip install` тепер ідуть сюди, а не в систему.
 
-> 🧠 Аналогія з Flask: це той самий `python -m venv` — нічого нового. Django нічого не змінює в роботі venv.
+> <i class="bi bi-lightbulb"></i> Аналогія з Flask: це той самий `python -m venv` — нічого нового. Django нічого не змінює в роботі venv.
 
 Деактивувати, коли закінчила:
 
@@ -39,7 +39,7 @@ venv\Scripts\activate.bat
 deactivate
 ```
 
-> 💡 Папку `venv/` **не додають у git** — її прописують у `.gitignore`. Замість неї версіонується `requirements.txt` (крок 6), за яким кожен відтворює середовище в себе.
+> <i class="bi bi-info-circle"></i> Папку `venv/` **не додають у git** — її прописують у `.gitignore`. Замість неї версіонується `requirements.txt` (крок 6), за яким кожен відтворює середовище в себе.
 
 ## Крок 2 — встановити Django
 
@@ -81,9 +81,9 @@ django-admin startproject config .
 - `config` — **ім'я проєкту**. Це стане іменем внутрішнього пакета з налаштуваннями (`config/settings.py`, `config/urls.py`). Часті імена: `config`, `core`, `root`, або назва самого сайту.
 - `.` (крапка) — **«створи тут, у поточній папці»**. Без крапки Django зробив би зайвий вкладений рівень папок. Крапка — важлива деталь.
 
-⚠️ **Типова помилка.** Якщо забути крапку, отримаєш `myproject/myproject/...` з подвійним вкладенням. Крапка каже: «пакет-налаштування створи прямо тут, не роби зайву обгортку».
+<i class="bi bi-exclamation-triangle"></i> **Типова помилка.** Якщо забути крапку, отримаєш `myproject/myproject/...` з подвійним вкладенням. Крапка каже: «пакет-налаштування створи прямо тут, не роби зайву обгортку».
 
-> 🧠 Порівняй зі своїм shop-app: там проєкт назвали `root`, тому пакет-налаштування — `root/`. Ім'я довільне, головне — крапку не забути.
+> <i class="bi bi-lightbulb"></i> Порівняй зі своїм shop-app: там проєкт назвали `root`, тому пакет-налаштування — `root/`. Ім'я довільне, головне — крапку не забути.
 
 ## Крок 4 — запустити сервер розробки
 
@@ -108,7 +108,7 @@ python manage.py runserver 8080         # інший порт
 python manage.py runserver 0.0.0.0:8000 # доступ з інших пристроїв у мережі
 ```
 
-> 🧠 `runserver` — це аналог `flask run` / `app.run()`. Це сервер **лише для розробки**, не для продакшну (для бою — Gunicorn/uWSGI + WSGI, або Uvicorn + ASGI).
+> <i class="bi bi-lightbulb"></i> `runserver` — це аналог `flask run` / `app.run()`. Це сервер **лише для розробки**, не для продакшну (для бою — Gunicorn/uWSGI + WSGI, або Uvicorn + ASGI).
 
 ## Крок 5 — застосувати початкові міграції
 
@@ -134,7 +134,7 @@ pip freeze > requirements.txt
 pip install -r requirements.txt
 ```
 
-> 💡 `requirements.txt` **додають у git**, а `venv/` — ні. Так репозиторій лишається легким, а середовище — відтворюваним.
+> <i class="bi bi-info-circle"></i> `requirements.txt` **додають у git**, а `venv/` — ні. Так репозиторій лишається легким, а середовище — відтворюваним.
 
 ## Уся послідовність одним блоком
 
@@ -149,13 +149,13 @@ python manage.py runserver         # 6. запустити сервер
 
 ## Типові помилки / Нюанси
 
-> ⚠️ **`django-admin: command not found`** → або venv не активований, або Django не встановлено. Перевір, що видно `(venv)` у рядку, і виконай `pip install django`.
+> <i class="bi bi-exclamation-triangle"></i> **`django-admin: command not found`** → або venv не активований, або Django не встановлено. Перевір, що видно `(venv)` у рядку, і виконай `pip install django`.
 
-> ⚠️ **Забута крапка в `startproject`** → зайвий вкладений рівень папок. Ознака: `config/config/...` замість очікуваного одного рівня.
+> <i class="bi bi-exclamation-triangle"></i> **Забута крапка в `startproject`** → зайвий вкладений рівень папок. Ознака: `config/config/...` замість очікуваного одного рівня.
 
-> ⚠️ **`That port is already in use`** → сервер уже запущений в іншому вікні, або порт зайнятий. Запусти на іншому порту (`runserver 8080`) або зупини попередній процес.
+> <i class="bi bi-exclamation-triangle"></i> **`That port is already in use`** → сервер уже запущений в іншому вікні, або порт зайнятий. Запусти на іншому порту (`runserver 8080`) або зупини попередній процес.
 
-> 💡 **`django-admin` vs `manage.py`.** `startproject` роблять через `django-admin` (проєкту ще нема). Усе решта (`runserver`, `migrate`, `startapp`) — через `python manage.py`.
+> <i class="bi bi-info-circle"></i> **`django-admin` vs `manage.py`.** `startproject` роблять через `django-admin` (проєкту ще нема). Усе решта (`runserver`, `migrate`, `startapp`) — через `python manage.py`.
 
 ## А де `startapp`?
 
@@ -169,4 +169,4 @@ python manage.py runserver         # 6. запустити сервер
 - `python manage.py runserver` — сервер розробки (аналог `flask run`), за замовчуванням `127.0.0.1:8000`; порт і хост можна змінити.
 - `migrate` — створює базові таблиці й `db.sqlite3`; `pip freeze > requirements.txt` фіксує залежності, а `pip install -r requirements.txt` їх відновлює.
 
-> 📖 Покрокова офіційна інструкція — у туторіалі «Writing your first Django app, Part 1» (docs.djangoproject.com).
+> <i class="bi bi-book"></i> Покрокова офіційна інструкція — у туторіалі «Writing your first Django app, Part 1» (docs.djangoproject.com).

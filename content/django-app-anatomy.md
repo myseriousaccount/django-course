@@ -51,7 +51,7 @@ class Book(models.Model):
     available = models.BooleanField(default=True)
 ```
 
-> 💡 Це Django ORM — аналог SQLAlchemy-моделей з Flask. Тільки тут ORM вбудований, окрему бібліотеку ставити не треба. У свіжому app `models.py` спершу порожній (`# Create your models here.`) — його наповнюють пізніше.
+> <i class="bi bi-info-circle"></i> Це Django ORM — аналог SQLAlchemy-моделей з Flask. Тільки тут ORM вбудований, окрему бібліотеку ставити не треба. У свіжому app `models.py` спершу порожній (`# Create your models here.`) — його наповнюють пізніше.
 
 Після будь-яких змін у `models.py` запускаєш `makemigrations` (створити «інструкцію») + `migrate` (застосувати до БД). Детально — в уроці про моделі.
 
@@ -90,7 +90,7 @@ urlpatterns = [
 ]
 ```
 
-> 🧠 Логіка зв'язку: головний `root/urls.py` через `include('blog.urls')` передає сюди керування, а вже цей файл вирішує, яку саме view викликати. Детально — в уроці «URL-маршрути».
+> <i class="bi bi-lightbulb"></i> Логіка зв'язку: головний `root/urls.py` через `include('blog.urls')` передає сюди керування, а вже цей файл вирішує, яку саме view викликати. Детально — в уроці «URL-маршрути».
 
 ## admin.py — підключення до адмінки
 
@@ -127,7 +127,7 @@ class BlogConfig(AppConfig):
 
 **Як це працює.** Ти міняєш `models.py` → `makemigrations` створює тут пронумерований файл (`0001_initial.py`, `0002_...`) → `migrate` застосовує його до бази. Так база завжди відповідає моделям, а історія змін зберігається.
 
-> ⚠️ Ці файли **не редагують руками** — вони генеруються. Але їх **комітять у git**, щоб уся команда мала однакову структуру БД.
+> <i class="bi bi-exclamation-triangle"></i> Ці файли **не редагують руками** — вони генеруються. Але їх **комітять у git**, щоб уся команда мала однакову структуру БД.
 
 ## tests.py — тести
 
@@ -153,4 +153,4 @@ class BlogConfig(AppConfig):
 - `admin.py` підключає модель до готової адмінки; `migrations/` — авто-історія змін БД (руками не чіпаєш, але комітиш).
 - `apps.py` — «паспорт» app; `tests.py`, `__init__.py` — зазвичай залишаєш як є.
 
-> 📖 Структуру застосунку та призначення файлів описано в туторіалі «Writing your first Django app» (docs.djangoproject.com).
+> <i class="bi bi-book"></i> Структуру застосунку та призначення файлів описано в туторіалі «Writing your first Django app» (docs.djangoproject.com).

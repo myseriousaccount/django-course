@@ -18,9 +18,9 @@ def post_list(request):
     return render(request, 'blog/post_list.html', {'posts': posts})
 ```
 
-➕ Видно весь потік згори вниз — нічого не приховано.
-➕ Просто для нестандартної логіки й багатьох гілок (`if`).
-➖ Для типових дій (показати список, форму CRUD) доводиться щоразу писати той самий шаблонний код.
+<i class="bi bi-plus-circle"></i> Видно весь потік згори вниз — нічого не приховано.
+<i class="bi bi-plus-circle"></i> Просто для нестандартної логіки й багатьох гілок (`if`).
+<i class="bi bi-dash-circle"></i> Для типових дій (показати список, форму CRUD) доводиться щоразу писати той самий шаблонний код.
 
 ## CBV — class-based views
 
@@ -47,7 +47,7 @@ class ProductList(ListView):
 path('', ProductList.as_view(), name='list')
 ```
 
-> ⚠️ Деталь: FBV у `path()` передаєш як `views.post_list` (без дужок), а CBV — як `ProductList.as_view()`. Бо маршрут очікує функцію, а `.as_view()` якраз перетворює клас на функцію.
+> <i class="bi bi-exclamation-triangle"></i> Деталь: FBV у `path()` передаєш як `views.post_list` (без дужок), а CBV — як `ProductList.as_view()`. Бо маршрут очікує функцію, а `.as_view()` якраз перетворює клас на функцію.
 
 ## Generic views — готові «заготовки» CBV
 
@@ -62,7 +62,7 @@ path('', ProductList.as_view(), name='list')
 | `UpdateView` | форма редагування наявного | `form`, `object` |
 | `DeleteView` | підтвердження й видалення | `object` |
 
-> 🧠 Аналогія: FBV — це **готувати з нуля** (повний контроль, але багато ручної роботи). CBV/generic — це **напівфабрикат за рецептом**: 90% типової роботи вже зроблено, ти лише додаєш свої штрихи (модель, шаблон, поля).
+> <i class="bi bi-lightbulb"></i> Аналогія: FBV — це **готувати з нуля** (повний контроль, але багато ручної роботи). CBV/generic — це **напівфабрикат за рецептом**: 90% типової роботи вже зроблено, ти лише додаєш свої штрихи (модель, шаблон, поля).
 
 ### TemplateView — просто сторінка
 
@@ -123,7 +123,7 @@ class ReviewUpdate(UpdateView):
     template_name = 'movies/review_form.html'  # можна той самий шаблон
 ```
 
-> 💡 Після успішного збереження `CreateView`/`UpdateView` роблять редірект. Куди — беруть із `get_absolute_url()` моделі або з атрибута `success_url`. Ось де стає у пригоді `get_absolute_url` з уроку про namespacing.
+> <i class="bi bi-info-circle"></i> Після успішного збереження `CreateView`/`UpdateView` роблять редірект. Куди — беруть із `get_absolute_url()` моделі або з атрибута `success_url`. Ось де стає у пригоді `get_absolute_url` з уроку про namespacing.
 
 ### DeleteView — підтвердження й видалення
 
@@ -139,7 +139,7 @@ class ProductDelete(DeleteView):
     success_url = reverse_lazy('shop:list')   # куди після видалення
 ```
 
-> 📌 `reverse_lazy` (а не `reverse`) потрібен, бо `success_url` обчислюється під час завантаження класу, коли маршрути ще можуть бути не готові. `reverse_lazy` відкладає обчислення до моменту використання.
+> <i class="bi bi-pin-angle"></i> `reverse_lazy` (а не `reverse`) потрібен, бо `success_url` обчислюється під час завантаження класу, коли маршрути ще можуть бути не готові. `reverse_lazy` відкладає обчислення до моменту використання.
 
 ## Ці шість покривають увесь CRUD
 
@@ -167,7 +167,7 @@ urlpatterns = [
 | Вчишся / хочеш бачити весь потік | **FBV** — нічого не приховано |
 | Багато однотипних сторінок | **CBV** — DRY, не дублюєш |
 
-> 💡 Немає «правильного» вибору на всі випадки. Багато проєктів **змішують**: прості списки/деталі/форми — на CBV, складні нетипові дії — на FBV. Почни з FBV (ти їх розумієш), а CBV додавай, коли побачиш, що пишеш той самий шаблонний код учетверте.
+> <i class="bi bi-info-circle"></i> Немає «правильного» вибору на всі випадки. Багато проєктів **змішують**: прості списки/деталі/форми — на CBV, складні нетипові дії — на FBV. Почни з FBV (ти їх розумієш), а CBV додавай, коли побачиш, що пишеш той самий шаблонний код учетверте.
 
 ## Налаштування CBV: які методи перевизначати
 
@@ -193,15 +193,15 @@ class BookList(ListView):
         return context
 ```
 
-> 🧠 Тут згадується минулий урок: `Book.objects.filter(...)` краще винести в менеджер (`Book.objects.available()`) — і `get_queryset` стане однорядковим. CBV і «товсті моделі» чудово поєднуються.
+> <i class="bi bi-lightbulb"></i> Тут згадується минулий урок: `Book.objects.filter(...)` краще винести в менеджер (`Book.objects.available()`) — і `get_queryset` стане однорядковим. CBV і «товсті моделі» чудово поєднуються.
 
 ## Типові помилки / Нюанси
 
-> ⚠️ **Забула `.as_view()`** → `path('', ProductList)` дасть помилку, бо маршрут отримує клас, а не функцію. Завжди `ProductList.as_view()`.
+> <i class="bi bi-exclamation-triangle"></i> **Забула `.as_view()`** → `path('', ProductList)` дасть помилку, бо маршрут отримує клас, а не функцію. Завжди `ProductList.as_view()`.
 
-> ⚠️ **`context_object_name`** — за замовчуванням `ListView` кладе список як `object_list`, а `DetailView` — об'єкт як `object`. Якщо в шаблоні пишеш `{{ books }}`, а не задала `context_object_name = 'books'` — буде порожньо.
+> <i class="bi bi-exclamation-triangle"></i> **`context_object_name`** — за замовчуванням `ListView` кладе список як `object_list`, а `DetailView` — об'єкт як `object`. Якщо в шаблоні пишеш `{{ books }}`, а не задала `context_object_name = 'books'` — буде порожньо.
 
-> ⚠️ **Магія надкласу** — для новачка FBV часто зрозуміліші, бо весь потік видно. Це нормально: не переходь на CBV лише «бо модно», переходь, коли CBV реально економить дублювання.
+> <i class="bi bi-exclamation-triangle"></i> **Магія надкласу** — для новачка FBV часто зрозуміліші, бо весь потік видно. Це нормально: не переходь на CBV лише «бо модно», переходь, коли CBV реально економить дублювання.
 
 ## Підсумок
 
@@ -212,4 +212,4 @@ class BookList(ListView):
 - Налаштовуєш CBV, перевизначаючи `get_queryset()` (який набір) і `get_context_data()` (що ще в шаблон).
 - Вибір не абсолютний: типовий CRUD → CBV (менше коду), нестандартне/навчання → FBV (прозоріше); проєкти часто змішують.
 
-> 📖 Повний перелік generic views і їхніх методів — у доці: docs.djangoproject.com → «Class-based views» і «Built-in class-based generic views».
+> <i class="bi bi-book"></i> Повний перелік generic views і їхніх методів — у доці: docs.djangoproject.com → «Class-based views» і «Built-in class-based generic views».

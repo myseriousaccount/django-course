@@ -40,7 +40,7 @@ View не викликається сама — вона ланка ланцюг
 | `request.FILES` | завантажені файли | `request.FILES['avatar']` |
 | `request.path` | шлях запиту | `'/blog/5/'` |
 
-> 💡 Паралель із Flask: там `request` глобальний (`from flask import request`), а в Django його **передають аргументом**. Тому `def hello(request):` — не магія: `request` тут звичайний параметр, який Django підставляє сам. Плюс явності: дивишся на сигнатуру — одразу видно, що функція отримує.
+> <i class="bi bi-info-circle"></i> Паралель із Flask: там `request` глобальний (`from flask import request`), а в Django його **передають аргументом**. Тому `def hello(request):` — не магія: `request` тут звичайний параметр, який Django підставляє сам. Плюс явності: дивишся на сигнатуру — одразу видно, що функція отримує.
 
 ## Які бувають відповіді
 
@@ -91,7 +91,7 @@ def secret(request):
     raise Http404('Нічого тут немає')
 ```
 
-> 📌 Усі ці класи (`render`, `redirect`, `JsonResponse`, `HttpResponse`) — різновиди одного: **`HttpResponse`**. Тобто view завжди повертає «якусь відповідь», просто в різній формі.
+> <i class="bi bi-pin-angle"></i> Усі ці класи (`render`, `redirect`, `JsonResponse`, `HttpResponse`) — різновиди одного: **`HttpResponse`**. Тобто view завжди повертає «якусь відповідь», просто в різній формі.
 
 ## `render()` детально
 
@@ -156,7 +156,7 @@ def product_list(request):
 
 Ось тут видно **весь MTV**: **Model** дає дані (`Book`/`Product`), **View** їх дістає, **Template** показує. Це кістяк будь-якої сторінки-списку, байдуже блог це, магазин чи бібліотека.
 
-> 🧠 Тримай view «тонкою»: її робота — узяти дані й повернути відповідь. Складні обчислення й правила — у моделях (урок «Де живе логіка»).
+> <i class="bi bi-lightbulb"></i> Тримай view «тонкою»: її робота — узяти дані й повернути відповідь. Складні обчислення й правила — у моделях (урок «Де живе логіка»).
 
 ## Параметри в адресі приходять у view
 
@@ -181,7 +181,7 @@ def book_detail(request, book_id):                 # book_id з URL
 | `<str:name>` | рядок без `/` | `/user/olena/` |
 | `<uuid:id>` | UUID | `/order/1a2b.../` |
 
-> ⚠️ Ім'я в маршруті й аргумент view мусять **збігатися**: `<int:book_id>` ↔ `book_id`.
+> <i class="bi bi-exclamation-triangle"></i> Ім'я в маршруті й аргумент view мусять **збігатися**: `<int:book_id>` ↔ `book_id`.
 
 ## GET і POST в одній view
 
@@ -198,7 +198,7 @@ def contact(request):
     return render(request, 'pages/contact.html')
 ```
 
-> 💡 Патерн **Post/Redirect/Get**: після успішного POST завжди роби `redirect`, а не `render`. Інакше при оновленні сторінки браузер повторно надішле форму.
+> <i class="bi bi-info-circle"></i> Патерн **Post/Redirect/Get**: після успішного POST завжди роби `redirect`, а не `render`. Інакше при оновленні сторінки браузер повторно надішле форму.
 
 ## Функції чи класи?
 
@@ -217,13 +217,13 @@ View сама по собі сторінки не дасть. Потрібні *
 
 ## Типові помилки / Нюанси
 
-> ⚠️ **Забутий `return`** → `The view didn't return an HttpResponse object. It returned None instead.` View **мусить** повертати відповідь.
+> <i class="bi bi-exclamation-triangle"></i> **Забутий `return`** → `The view didn't return an HttpResponse object. It returned None instead.` View **мусить** повертати відповідь.
 
-> ⚠️ **`TemplateDoesNotExist`** → шлях у `render` неправильний або app не в `INSTALLED_APPS`. Пиши шлях із підпапкою app: `'blog/post_list.html'`.
+> <i class="bi bi-exclamation-triangle"></i> **`TemplateDoesNotExist`** → шлях у `render` неправильний або app не в `INSTALLED_APPS`. Пиши шлях із підпапкою app: `'blog/post_list.html'`.
 
-> ⚠️ **Плутанина ролей** — `urls.py` каже **за якою адресою**, `views.py` каже **що робити**. Не змішуй.
+> <i class="bi bi-exclamation-triangle"></i> **Плутанина ролей** — `urls.py` каже **за якою адресою**, `views.py` каже **що робити**. Не змішуй.
 
-> 💡 Після POST — `redirect`, а не `render` (Post/Redirect/Get), щоб уникнути повторної відправки форми.
+> <i class="bi bi-info-circle"></i> Після POST — `redirect`, а не `render` (Post/Redirect/Get), щоб уникнути повторної відправки форми.
 
 ## Підсумок
 
@@ -234,4 +234,4 @@ View сама по собі сторінки не дасть. Потрібні *
 - Патерн «дістати з БД → передати в шаблон» однаковий для будь-якої моделі (блог, магазин, бібліотека).
 - Щоб сторінка ожила, потрібні **чотири** речі: view + шаблон + маршрут + сервер.
 
-> 📖 Деталі — розділи «Writing views» і «Request and response objects» у документації Django (docs.djangoproject.com).
+> <i class="bi bi-book"></i> Деталі — розділи «Writing views» і «Request and response objects» у документації Django (docs.djangoproject.com).

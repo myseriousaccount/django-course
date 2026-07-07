@@ -15,7 +15,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'root.settings')
 
 Цей рядок каже: «налаштування шукай у `root/settings.py`». Тому будь-яка команда через `manage.py` автоматично знає про твою БД, твої apps, твої шаблони.
 
-> 🧠 Аналогія: `manage.py` — це **пульт від конкретного телевізора**. Існує універсальна команда `django-admin`, але `manage.py` — це той самий інструмент, уже «налаштований» на твій проєкт (через `DJANGO_SETTINGS_MODULE`). Тому в роботі ти майже завжди користуєшся `manage.py`, а не голим `django-admin`.
+> <i class="bi bi-lightbulb"></i> Аналогія: `manage.py` — це **пульт від конкретного телевізора**. Існує універсальна команда `django-admin`, але `manage.py` — це той самий інструмент, уже «налаштований» на твій проєкт (через `DJANGO_SETTINGS_MODULE`). Тому в роботі ти майже завжди користуєшся `manage.py`, а не голим `django-admin`.
 
 ## Як викликати команди
 
@@ -83,7 +83,7 @@ python manage.py migrate
 
 Приклад: додала до моделі `Book` бібліотеки нове поле `isbn`. `makemigrations` створить файл `0002_book_isbn.py` з описом зміни, а `migrate` реально додасть колонку `isbn` у таблицю.
 
-> 💡 Чому два кроки? Бо файл-міграція потрапляє в git, і вся команда накатує однакові зміни через `migrate`. Це акуратна історія змін схеми БД. `showmigrations` покаже, що вже застосовано, а `sqlmigrate` — який саме SQL виконається.
+> <i class="bi bi-info-circle"></i> Чому два кроки? Бо файл-міграція потрапляє в git, і вся команда накатує однакові зміни через `migrate`. Це акуратна історія змін схеми БД. `showmigrations` покаже, що вже застосовано, а `sqlmigrate` — який саме SQL виконається.
 
 ## startapp — створити модуль
 
@@ -114,7 +114,7 @@ python manage.py shell
 >>> Post.objects.create(title='Привіт', body='Перший пост')
 ```
 
-> 💡 Це саме `manage.py shell`, а не звичайний `python`: перший знає про `DJANGO_SETTINGS_MODULE`, тому моделі й БД доступні одразу.
+> <i class="bi bi-info-circle"></i> Це саме `manage.py shell`, а не звичайний `python`: перший знає про `DJANGO_SETTINGS_MODULE`, тому моделі й БД доступні одразу.
 
 ## createsuperuser — доступ до адмінки
 
@@ -138,13 +138,13 @@ python manage.py createsuperuser
 
 ## Типові помилки / Нюанси
 
-> ⚠️ **`No changes detected` після зміни моделі** → app не в `INSTALLED_APPS`, або файл не збережено. Django «не бачить» модель, тому й міграцію не робить.
+> <i class="bi bi-exclamation-triangle"></i> **`No changes detected` після зміни моделі** → app не в `INSTALLED_APPS`, або файл не збережено. Django «не бачить» модель, тому й міграцію не робить.
 
-> ⚠️ **Забула `migrate` після `makemigrations`** → міграція є, але база не змінена. Помилки типу `no such column`. Правило: змінила модель → `makemigrations` → `migrate`.
+> <i class="bi bi-exclamation-triangle"></i> **Забула `migrate` після `makemigrations`** → міграція є, але база не змінена. Помилки типу `no such column`. Правило: змінила модель → `makemigrations` → `migrate`.
 
-> ⚠️ **`python manage.py` без активованого venv** → або «command not found», або запуск не тим Python. Спочатку активуй середовище (`(venv)` у рядку).
+> <i class="bi bi-exclamation-triangle"></i> **`python manage.py` без активованого venv** → або «command not found», або запуск не тим Python. Спочатку активуй середовище (`(venv)` у рядку).
 
-> 💡 **Забула, як зветься команда?** `python manage.py help` дасть повний список, а `help <команда>` — усі її прапорці.
+> <i class="bi bi-info-circle"></i> **Забула, як зветься команда?** `python manage.py help` дасть повний список, а `help <команда>` — усі її прапорці.
 
 ## Підсумок
 
@@ -155,4 +155,4 @@ python manage.py createsuperuser
 - `makemigrations` пише план змін БД, `migrate` його виконує — два окремі кроки.
 - `startproject` → через `django-admin`; усе решта → через `manage.py`.
 
-> 📖 Повний перелік команд і їхні параметри — у розділі «django-admin and manage.py» офіційної документації (docs.djangoproject.com).
+> <i class="bi bi-book"></i> Повний перелік команд і їхні параметри — у розділі «django-admin and manage.py» офіційної документації (docs.djangoproject.com).

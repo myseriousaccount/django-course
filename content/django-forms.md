@@ -8,7 +8,7 @@
 
 Без форми довелося б вручну діставати кожне значення з `request.POST`, самому перевіряти формат, обробляти помилки й малювати `<input>` руками. Форма робить це все за тебе.
 
-> 🧠 **Аналогія.** Форма — це прискіпливий адміністратор на рецепції. Ти простягаєш йому стос паперів (сирий `request.POST`), він звіряє кожен пункт із правилами, підкреслює червоним те, що заповнено неправильно, і лише охайно перевірену анкету пускає далі. Ти працюєш уже з чистими даними, а не з тим, що написав відвідувач.
+> <i class="bi bi-lightbulb"></i> **Аналогія.** Форма — це прискіпливий адміністратор на рецепції. Ти простягаєш йому стос паперів (сирий `request.POST`), він звіряє кожен пункт із правилами, підкреслює червоним те, що заповнено неправильно, і лише охайно перевірену анкету пускає далі. Ти працюєш уже з чистими даними, а не з тим, що написав відвідувач.
 
 ## Form проти ModelForm: коли який
 
@@ -47,9 +47,9 @@ class ArticleForm(forms.ModelForm):
 
 Бери її, коли форма **створює чи редагує об'єкт моделі**: стаття блогу, товар у магазині, профіль. `ModelForm` сама зчитає типи полів із моделі й отримає метод `save()`, що пише в БД.
 
-> 💡 Правило вибору просте: **зберігаєш у модель — `ModelForm`; не зберігаєш — `Form`**. `ModelForm` — це DRY у дії: не дублюєш опис полів, які вже є в моделі.
+> <i class="bi bi-info-circle"></i> Правило вибору просте: **зберігаєш у модель — `ModelForm`; не зберігаєш — `Form`**. `ModelForm` — це DRY у дії: не дублюєш опис полів, які вже є в моделі.
 
-🧠 Паралель з Flask: `forms.Form` — це як `FlaskForm` у WTForms, де кожне поле ти прописуєш руками. А `ModelForm` — це те, чого у «голому» WTForms немає з коробки: аналог доводилося збирати через розширення `WTForms-Alchemy`. Django дає це вбудовано.
+<i class="bi bi-lightbulb"></i> Паралель з Flask: `forms.Form` — це як `FlaskForm` у WTForms, де кожне поле ти прописуєш руками. А `ModelForm` — це те, чого у «голому» WTForms немає з коробки: аналог доводилося збирати через розширення `WTForms-Alchemy`. Django дає це вбудовано.
 
 ## Поля форми
 
@@ -142,7 +142,7 @@ class OrderForm(forms.Form):
 
 **Навіщо.** Розділення «поле / віджет» дає гнучкість: логіку валідації (email є email) описуєш один раз, а вигляд змінюєш під дизайн — випадний список чи радіокнопки, з класом Bootstrap чи без.
 
-> 💡 У `ModelForm` віджети перевизначають у `Meta.widgets`:
+> <i class="bi bi-info-circle"></i> У `ModelForm` віджети перевизначають у `Meta.widgets`:
 > ```python
 > class ArticleForm(forms.ModelForm):
 >     class Meta:
@@ -173,7 +173,7 @@ if form.is_valid():
 - `request.POST['rating']` → рядок `'5'` (усе з форми приходить рядком).
 - `form.cleaned_data['rating']` → значення потрібного типу, уже перевірене.
 
-> ⚠️ Не звертайся до `cleaned_data` до виклику `is_valid()` — до валідації цього словника ще не існує, буде помилка. Спершу `is_valid()`, потім `cleaned_data`.
+> <i class="bi bi-exclamation-triangle"></i> Не звертайся до `cleaned_data` до виклику `is_valid()` — до валідації цього словника ще не існує, буде помилка. Спершу `is_valid()`, потім `cleaned_data`.
 
 ## Власна валідація одного поля: clean_\<field>()
 
@@ -195,7 +195,7 @@ class RegisterForm(forms.Form):
 
 Django викликає `clean_username()` автоматично під час `is_valid()`. Якщо піднімеш `ValidationError`, форма стане невалідною, а текст помилки покажеться біля потрібного поля.
 
-> 💡 Метод `clean_<field>()` **мусить повернути** значення поля (навіть якщо не змінював його) — інакше воно зникне з `cleaned_data`.
+> <i class="bi bi-info-circle"></i> Метод `clean_<field>()` **мусить повернути** значення поля (навіть якщо не змінював його) — інакше воно зникне з `cleaned_data`.
 
 Ще приклад — відгук про фільм не має бути занадто коротким:
 
@@ -230,7 +230,7 @@ class RegisterForm(forms.Form):
 
 **Різниця.** `clean_<field>()` бачить **одне** поле й повертає його значення; `clean()` бачить **усі** поля (через `cleaned_data`/`super().clean()`) і повертає весь словник. Помилка з `clean()` за замовчуванням показується вгорі форми (не біля конкретного поля).
 
-🧠 Паралель з WTForms: `is_valid()` — це аналог `form.validate_on_submit()`, `cleaned_data` — аналог `form.<field>.data`, `clean_<field>()` — аналог `validate_<field>()`, а `clean()` — аналог валідатора рівня форми. Логіка майже дзеркальна.
+<i class="bi bi-lightbulb"></i> Паралель з WTForms: `is_valid()` — це аналог `form.validate_on_submit()`, `cleaned_data` — аналог `form.<field>.data`, `clean_<field>()` — аналог `validate_<field>()`, а `clean()` — аналог валідатора рівня форми. Логіка майже дзеркальна.
 
 ## Рендер у шаблоні
 
@@ -257,7 +257,7 @@ class RegisterForm(forms.Form):
 
 > **CSRF-токен** — прихований токен захисту від атаки «підробка міжсайтового запиту» (Cross-Site Request Forgery). Django вимагає його на кожній POST-формі.
 
-> ⚠️ Забудеш `{% csrf_token %}` — отримаєш помилку **403 Forbidden** при надсиланні. Це найчастіша причина «форма не працює» у новачків. У WTForms роль токена грає `{{ form.csrf_token }}`, тут — тег шаблону.
+> <i class="bi bi-exclamation-triangle"></i> Забудеш `{% csrf_token %}` — отримаєш помилку **403 Forbidden** при надсиланні. Це найчастіша причина «форма не працює» у новачків. У WTForms роль токена грає `{{ form.csrf_token }}`, тут — тег шаблону.
 
 **Рендер поля поокремо** — коли треба гнучке верстання (наприклад, картка замовлення з власним HTML):
 
@@ -317,7 +317,7 @@ def contact(request):
     return render(request, 'pages/contact.html', {'form': form})
 ```
 
-> 💡 `request.FILES` додають другим аргументом, лише якщо у формі є `FileField`/`ImageField` (наприклад, обкладинка статті). Для звичайних форм досить `request.POST`.
+> <i class="bi bi-info-circle"></i> `request.FILES` додають другим аргументом, лише якщо у формі є `FileField`/`ImageField` (наприклад, обкладинка статті). Для звичайних форм досить `request.POST`.
 
 ## Про form.save() у ModelForm
 
@@ -333,7 +333,7 @@ def contact(request):
 
 Той самий прийом — для замовлення в магазині: `order = form.save(commit=False)`, `order.customer = request.user`, `order.save()`.
 
-> 📌 Патерн «POST → обробка → **redirect**» (а не просто рендер після успіху) називають **Post/Redirect/Get**. Він рятує від повторного надсилання форми при оновленні сторінки (F5).
+> <i class="bi bi-pin-angle"></i> Патерн «POST → обробка → **redirect**» (а не просто рендер після успіху) називають **Post/Redirect/Get**. Він рятує від повторного надсилання форми при оновленні сторінки (F5).
 
 ## Де це в проєкті
 
@@ -364,15 +364,15 @@ def contact(request):
 
 ## Типові помилки / Нюанси
 
-> ⚠️ **Забутий `{% csrf_token %}`** → **403 Forbidden** при надсиланні POST. Найчастіша причина «форма не працює».
+> <i class="bi bi-exclamation-triangle"></i> **Забутий `{% csrf_token %}`** → **403 Forbidden** при надсиланні POST. Найчастіша причина «форма не працює».
 
-> ⚠️ **`cleaned_data` до `is_valid()`** → словника ще не існує. Спершу `is_valid()`, потім `cleaned_data`.
+> <i class="bi bi-exclamation-triangle"></i> **`cleaned_data` до `is_valid()`** → словника ще не існує. Спершу `is_valid()`, потім `cleaned_data`.
 
-> ⚠️ **`clean_<field>()` без `return`** → поле мовчки зникне з `cleaned_data`. Завжди повертай значення.
+> <i class="bi bi-exclamation-triangle"></i> **`clean_<field>()` без `return`** → поле мовчки зникне з `cleaned_data`. Завжди повертай значення.
 
-> ⚠️ **`form.save()` на `forms.Form`** → `AttributeError`. Метод є лише в `ModelForm`; для звичайної форми обробляй `cleaned_data` руками.
+> <i class="bi bi-exclamation-triangle"></i> **`form.save()` на `forms.Form`** → `AttributeError`. Метод є лише в `ModelForm`; для звичайної форми обробляй `cleaned_data` руками.
 
-> 💡 Після успішного POST — `redirect`, а не `render` (Post/Redirect/Get), щоб уникнути повторної відправки при F5.
+> <i class="bi bi-info-circle"></i> Після успішного POST — `redirect`, а не `render` (Post/Redirect/Get), щоб уникнути повторної відправки при F5.
 
 ## Підсумок
 
@@ -382,4 +382,4 @@ def contact(request):
 - У шаблоні: `{{ form.as_div }}` (сучасний дефолт) + **обов'язковий `{% csrf_token %}`** (без нього — 403); поля можна рендерити й поокремо.
 - У view один патерн на GET і POST: `if request.method == 'POST'` → `form = MyForm(request.POST)` → `is_valid()` → `form.save()` або обробка `cleaned_data` → `redirect` (Post/Redirect/Get). `save(commit=False)` — коли треба доповнити об'єкт (автор, покупець) перед записом.
 
-> 📖 Деталі — у розділах «Working with forms», «Form fields», «Widgets», «Form and field validation» та «Creating forms from models» офіційної документації Django (docs.djangoproject.com).
+> <i class="bi bi-book"></i> Деталі — у розділах «Working with forms», «Form fields», «Widgets», «Form and field validation» та «Creating forms from models» офіційної документації Django (docs.djangoproject.com).

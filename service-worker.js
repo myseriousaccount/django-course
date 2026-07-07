@@ -5,7 +5,7 @@
  * - На localhost — network-first (свіжі файли при кожному запуску, без капкану кешу)
  * - На production-домені — cache-first (швидко + офлайн)
  */
-const CACHE = 'django-platform-v5';
+const CACHE = 'django-platform-v6';
 const PRECACHE = [
     './',
     'index.html',
