@@ -218,6 +218,16 @@ function app() {
             return this.topics.filter(t => t.section === sectionId);
         },
 
+        // Іконка теми в сайдбарі: галочка для пройдених, інакше bi-* з topics.json
+        topicIcon(topic) {
+            if (this.isCompleted(topic.id)) {
+                return '<i class="bi bi-check-circle-fill text-django-500"></i>';
+            }
+            return topic.icon
+                ? `<i class="bi ${topic.icon}"></i>`
+                : '<i class="bi bi-file-earmark-text"></i>';
+        },
+
         get currentSection() {
             if (!this.currentTopicMeta) return null;
             return this.sections.find(s => s.id === this.currentTopicMeta.section);
