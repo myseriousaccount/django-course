@@ -1,0 +1,156 @@
+/* Custom styles complementing Tailwind — фірмова тема Django */
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+body { -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+/* ===== Паперове кремове тло (light) з ледь помітним зеленим візерунком ===== */
+.dj-paper {
+    background-color: #f5f2e9;
+    background-image:
+        radial-gradient(circle at 1px 1px, rgba(12, 75, 51, 0.045) 1px, transparent 0);
+    background-size: 24px 24px;
+}
+
+/* ===== Картка теорії — біле «полотно» поверх паперу ===== */
+.dj-card {
+    background: #ffffff;
+    border: 1px solid rgba(12, 75, 51, 0.12);
+    border-radius: 1.25rem;
+    padding: 2.25rem 2.5rem;
+    box-shadow: 0 1px 3px rgba(9, 46, 32, 0.06), 0 10px 30px -14px rgba(9, 46, 32, 0.14);
+}
+.dark .dj-card {
+    background: #0b1f17;
+    border-color: rgba(68, 183, 139, 0.18);
+    box-shadow: none;
+}
+@media (max-width: 640px) {
+    .dj-card { padding: 1.4rem 1.25rem; }
+}
+
+/* ===== Prose: фірмова типографіка + читабельність ===== */
+/* Базовий комфорт читання (доповнює плагін typography) */
+.prose {
+    font-size: 1.0625rem;      /* трохи більший за дефолт */
+    line-height: 1.8;          /* повітря між рядками */
+    color: #25352c;
+}
+.dark .prose { color: #cdd8d1; }
+
+/* Відступи між блоками — щоб текст «дихав» */
+.prose p { margin: 1.05em 0; }
+.prose ul, .prose ol { margin: 1.1em 0; padding-left: 1.6em; }
+.prose li { margin: 0.45em 0; padding-left: 0.2em; }
+.prose li::marker { color: #44b78b; }
+.prose > :first-child { margin-top: 0; }
+
+/* Заголовки — відступ під липкий хедер + фірмовий зелений */
+.prose h1, .prose h2, .prose h3 { scroll-margin-top: 80px; }
+
+.prose h1 { font-size: 1.9rem; line-height: 1.25; color: #092e20; margin-bottom: 0.6em; }
+.dark .prose h1 { color: #cfe9dd; }
+
+.prose h2 {
+    font-size: 1.45rem;
+    line-height: 1.3;
+    margin-top: 2.4rem;
+    margin-bottom: 0.9rem;
+    padding: 0.1rem 0 0.1rem 0.8rem;
+    border-left: 4px solid #44b78b;
+    color: #0c4b33;
+}
+.dark .prose h2 { color: #86ccab; }
+
+.prose h3 {
+    font-size: 1.2rem;
+    margin-top: 1.8rem;
+    margin-bottom: 0.6rem;
+    color: #0a3d2a;
+}
+.dark .prose h3 { color: #9fd3bb; }
+
+.prose strong { color: #0c4b33; font-weight: 700; }
+.dark .prose strong { color: #b6e2cf; }
+
+.prose a { color: #0c4b33; text-decoration-color: #86ccab; text-underline-offset: 2px; }
+.dark .prose a { color: #44b78b; }
+
+/* Code blocks */
+.prose pre {
+    background: #092e20 !important;
+    border-radius: 0.85rem;
+    padding: 1.1rem 1.25rem;
+    overflow-x: auto;
+    margin: 1.3em 0;
+    border: 1px solid rgba(68, 183, 139, 0.15);
+    line-height: 1.65;
+}
+
+/* Inline code */
+.prose code:not(pre code) {
+    background: #eaf5ef;
+    padding: 0.12rem 0.4rem;
+    border-radius: 0.3rem;
+    font-size: 0.88em;
+    font-weight: 600;
+    color: #0c4b33;
+}
+.dark .prose code:not(pre code) { background: rgb(30 41 59); color: #44b78b; }
+.prose code:not(pre code)::before, .prose code:not(pre code)::after { content: ''; }
+
+/* Tables — зелена шапка, повітря в клітинках */
+.prose table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow-x: auto;
+    display: block;
+    margin: 1.4em 0;
+    font-size: 0.95em;
+    line-height: 1.55;
+}
+.prose table thead { background: #0c4b33; color: #ffffff; }
+.dark .prose table thead { background: #0a3d2a; }
+.prose table th, .prose table td {
+    padding: 0.6rem 0.85rem;
+    border: 1px solid rgba(12, 75, 51, 0.15);
+    text-align: left;
+    vertical-align: top;
+}
+.dark .prose table th, .dark .prose table td { border-color: rgb(51 65 85); }
+.prose table tbody tr:nth-child(even) { background: rgba(12, 75, 51, 0.035); }
+.dark .prose table tbody tr:nth-child(even) { background: rgba(68, 183, 139, 0.05); }
+
+/* Blockquote — зелений акцент (аналогії 🧠 / попередження ⚠️) */
+.prose blockquote {
+    border-left: 4px solid #44b78b;
+    background: #eaf5ef;
+    padding: 0.85rem 1.1rem;
+    border-radius: 0.5rem;
+    margin: 1.3em 0;
+    font-style: normal;
+    color: #1c2d24;
+}
+.prose blockquote p { margin: 0.3em 0; }
+.dark .prose blockquote { background: rgb(9 46 32 / 0.45); color: #cfe9dd; }
+
+/* Розділювач */
+.prose hr { border-color: rgba(12, 75, 51, 0.15); margin: 2em 0; }
+.dark .prose hr { border-color: rgba(68, 183, 139, 0.15); }
+
+/* Code editor textarea */
+textarea[spellcheck="false"] { line-height: 1.6; tab-size: 4; }
+
+/* Scrollbar — зелений */
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #9fd3bb; border-radius: 5px; }
+.dark ::-webkit-scrollbar-thumb { background: #0a3d2a; }
+
+/* Mobile */
+@media (max-width: 640px) {
+    .prose { font-size: 1rem; line-height: 1.75; }
+    .prose pre { font-size: 0.82rem; }
+    .prose h1 { font-size: 1.6rem; }
+    .prose h2 { font-size: 1.3rem; }
+}

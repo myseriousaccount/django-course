@@ -1,0 +1,147 @@
+{
+  "sections": [
+    { "id": "start",     "title": "1. Старт: проєкт і середовище" },
+    { "id": "structure", "title": "2. Структура проєкту" },
+    { "id": "apps",      "title": "3. Модульна архітектура (apps)" },
+    { "id": "routing",   "title": "4. URL і Views (роути)" },
+    { "id": "arch",      "title": "5. Архітектура: як це тримається разом" },
+    { "id": "organize",  "title": "6. Організація коду й масштабування" },
+    { "id": "toolkit",   "title": "7. Щоденний інструментарій Django" },
+    { "id": "practice",  "title": "8. Практика й best practices" }
+  ],
+  "topics": [
+
+    { "id": "django-philosophy", "section": "start", "icon": "🧭",
+      "title": "Філософія Django: суть і принципи",
+      "summary": "Навіщо Django саме такий: DRY, конвенція над конфігурацією, явність, слабка зв'язність. Карта ключових понять, які ти зустрінеш далі." },
+
+    { "id": "django-what-is", "section": "start", "icon": "🎸",
+      "title": "Що таке Django",
+      "summary": "Full-stack фреймворк, патерн MTV, «batteries included», чим відрізняється від Flask і коли обирати Django." },
+
+    { "id": "django-venv-setup", "section": "start", "icon": "⚙️",
+      "title": "Сетап: venv і перший проєкт",
+      "summary": "venv, pip install django, django-admin startproject, runserver, requirements.txt — усі команди по кроках." },
+
+    { "id": "django-project-structure", "section": "structure", "icon": "🗺️",
+      "title": "Структура проєкту: що обов'язкове",
+      "summary": "Що створює startproject, чим «проєкт» відрізняється від «app», які папки й файли мусять бути. На прикладі shop-app." },
+
+    { "id": "django-manage-py", "section": "structure", "icon": "🧰",
+      "title": "manage.py — твій пульт керування",
+      "summary": "Для чого manage.py, як він пов'язаний з settings, головні команди: runserver, startapp, makemigrations, migrate, createsuperuser." },
+
+    { "id": "django-root-files", "section": "structure", "icon": "📦",
+      "title": "Папка root/: settings, urls, wsgi/asgi",
+      "summary": "Файли пакета-проєкту: settings.py (INSTALLED_APPS, БД, шаблони), urls.py (головний роутер), wsgi.py/asgi.py, __init__.py." },
+
+    { "id": "django-apps-intro", "section": "apps", "icon": "🧩",
+      "title": "Модулі (apps): кожна частина = application",
+      "summary": "startapp, навіщо ділити проєкт на apps, реєстрація в INSTALLED_APPS, чому home/catalog/carts — окремі модулі." },
+
+    { "id": "django-app-anatomy", "section": "apps", "icon": "🫀",
+      "title": "Анатомія app: які файли і навіщо",
+      "summary": "models.py, views.py, urls.py, admin.py, apps.py, migrations/ — що відповідає за що всередині одного модуля." },
+
+    { "id": "django-urls", "section": "routing", "icon": "🛣️",
+      "title": "URL-маршрути: path, include, name",
+      "summary": "Де і як прописувати роути: головний root/urls.py → include() → app/urls.py, path(), конвертери <int:pk>, name= для reverse." },
+
+    { "id": "django-views", "section": "routing", "icon": "👁️",
+      "title": "Views: функції-обробники",
+      "summary": "Що таке view, request → response, render() і HttpResponse, context, як url прив'язується до view. На прикладі home/views.py." },
+
+    { "id": "django-request-lifecycle", "section": "arch", "icon": "🔄",
+      "title": "Життєвий цикл запиту + Middleware",
+      "summary": "Повний шлях запиту: Middleware → URLconf → View → Response. Що таке middleware і чому порядок у списку важливий." },
+
+    { "id": "django-templates", "section": "arch", "icon": "🖼️",
+      "title": "Шаблони: наслідування і організація",
+      "summary": "{% extends %}, {% block %}, base.html, DIRS vs APP_DIRS. Як не дублювати HTML. На прикладі твого _layouts/base.html." },
+
+    { "id": "django-static", "section": "arch", "icon": "🎨",
+      "title": "Статика: структура і роздача",
+      "summary": "static/, STATIC_URL, STATICFILES_DIRS, {% load static %}, collectstatic. Де лежать CSS/JS і чому dev ≠ prod." },
+
+    { "id": "django-settings-envs", "section": "arch", "icon": "🔐",
+      "title": "Settings: dev vs prod і секрети",
+      "summary": "DEBUG, SECRET_KEY, ALLOWED_HOSTS, винесення секретів у env-змінні, чому не можна тримати ключі в коді." },
+
+    { "id": "django-where-logic", "section": "organize", "icon": "🧠",
+      "title": "Де живе логіка: товсті моделі, тонкі views",
+      "summary": "Куди класти бізнес-логіку, щоб views не розпухали; методи моделей, сервіси; принцип, що рятує проєкт при рості." },
+
+    { "id": "django-url-namespacing", "section": "organize", "icon": "🏷️",
+      "title": "Namespacing маршрутів (app_name)",
+      "summary": "Коли в кількох apps є index/detail — як їх не плутати: app_name, namespace, {% url 'catalog:detail' %}." },
+
+    { "id": "django-views-fbv-cbv", "section": "organize", "icon": "⚖️",
+      "title": "FBV vs CBV: два стилі views",
+      "summary": "Function-based vs class-based views, generic views (ListView, DetailView), коли який підхід обирати." },
+
+    { "id": "django-contrib-batteries", "section": "organize", "icon": "🔋",
+      "title": "django.contrib — батарейки як apps",
+      "summary": "Чому admin, auth, sessions, messages — це теж apps; що вони дають з коробки і як вбудовані в проєкт." },
+
+    { "id": "django-shortcuts", "section": "toolkit", "icon": "⚡",
+      "title": "django.shortcuts: щоденні хелпери",
+      "summary": "render, redirect, get_object_or_404, get_list_or_404 — функції, що є майже в кожному view, і де саме їх застосовувати." },
+
+    { "id": "django-orm-queries", "section": "toolkit", "icon": "🔎",
+      "title": "ORM-запити: QuerySet API",
+      "summary": "all/filter/get/exclude/order_by/count/exists/first, field lookups (__gte, __icontains), create/update/delete, Q і F — робота з БД без SQL." },
+
+    { "id": "django-model-fields", "section": "toolkit", "icon": "🧱",
+      "title": "Поля моделей і зв'язки",
+      "summary": "Типи полів (Char/Text/Decimal/DateTime/Image…), опції (null/blank/default/choices), зв'язки ForeignKey/ManyToMany/OneToOne, Meta та __str__." },
+
+    { "id": "django-forms", "section": "toolkit", "icon": "📝",
+      "title": "Форми: Form і ModelForm",
+      "summary": "forms.Form проти ModelForm, cleaned_data, is_valid(), валідація clean_*, рендер у шаблоні й збереження через form.save()." },
+
+    { "id": "django-auth-helpers", "section": "toolkit", "icon": "🔑",
+      "title": "Автентифікація: login, logout, @login_required",
+      "summary": "authenticate, login, logout, request.user, @login_required, create_user — готові інструменти входу (аналог Flask-Login)." },
+
+    { "id": "django-messages", "section": "toolkit", "icon": "💬",
+      "title": "Повідомлення (messages framework)",
+      "summary": "messages.success/error/info, вивід у шаблоні, MessageMiddleware — разові повідомлення після дій (аналог flash з Flask)." },
+
+    { "id": "django-template-toolkit", "section": "toolkit", "icon": "🧰",
+      "title": "Шаблони: вбудовані теги й фільтри",
+      "summary": "{% if %} {% for %} {% url %} {% static %} {% include %}, фільтри date/default/length/truncatewords — щоденний набір для HTML." },
+
+    { "id": "django-javascript", "section": "toolkit", "icon": "🖱️",
+      "title": "JavaScript у Django: навіщо і коли",
+      "summary": "Django рендерить HTML на сервері, JS додає інтерактив у браузері: коли він потрібен (модалки, AJAX/fetch), CSRF-пастка, htmx/Alpine замість гори коду." },
+
+    { "id": "django-frontend-tools", "section": "toolkit", "icon": "🔌",
+      "title": "jQuery і популярні фронтенд-інструменти",
+      "summary": "Що таке jQuery і чи потрібна сьогодні, jQuery + Django (AJAX, CSRF), і огляд готових інструментів: Bootstrap, Select2, DataTables, Chart.js, SweetAlert2…" },
+
+    { "id": "django-alpine", "section": "toolkit", "icon": "🏔️",
+      "title": "Alpine.js: реактивність в HTML",
+      "summary": "«Tailwind для JS»: інтерактив через атрибути (x-data, x-show, @click). Приклади вкладок/модалок на реальному коді цієї платформи + Alpine з Django." },
+
+    { "id": "django-pagination", "section": "toolkit", "icon": "📄",
+      "title": "Пагінація (Paginator)",
+      "summary": "Paginator, get_page, has_next/has_previous, num_pages — розбивка довгих списків (курси, блог) на сторінки, у view і в шаблоні." },
+
+    { "id": "django-admin-customization", "section": "toolkit", "icon": "🛠️",
+      "title": "Налаштування адмінки",
+      "summary": "ModelAdmin: list_display, list_filter, search_fields, @admin.register, inlines — як зробити вбудовану адмін-панель зручною." },
+
+    { "id": "django-models-stepbystep", "section": "practice", "icon": "🏗️",
+      "title": "Моделі крок за кроком",
+      "summary": "Повний робочий процес: від класу в models.py до makemigrations/migrate й адмінки. Best practices, __str__/Meta, і що насправді означає «зареєструвати модель»." },
+
+    { "id": "django-validation", "section": "practice", "icon": "✅",
+      "title": "Валідація: клієнт проти сервера",
+      "summary": "Чи треба JS-валідація для логіна, чи повторювати перевірки у view — золоте правило: сервер валідує ЗАВЖДИ, клієнт — лише UX. HTML5 + Django Forms." },
+
+    { "id": "django-ajax-when", "section": "practice", "icon": "🔄",
+      "title": "AJAX: коли і навіщо",
+      "summary": "Розвіюємо міф «AJAX — це для БД». Насправді — це запит до сервера без перезавантаження сторінки. Коли варто, коли ні, правило вибору." }
+
+  ]
+}

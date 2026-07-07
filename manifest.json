@@ -1,0 +1,19 @@
+{
+  "name": "Django Навчання",
+  "short_name": "Django",
+  "description": "Інтерактивний курс Django з тестами і завданнями",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#092e20",
+  "theme_color": "#0c4b33",
+  "lang": "uk",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
