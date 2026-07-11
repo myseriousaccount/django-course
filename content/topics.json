@@ -140,6 +140,10 @@
       "title": "jQuery та інструменти",
       "summary": "Що таке jQuery і чи потрібна сьогодні, jQuery + Django (AJAX, CSRF), і огляд готових інструментів: Bootstrap, Select2, DataTables, Chart.js, SweetAlert2…" },
 
+    { "id": "django-jquery-events", "section": "frontend", "icon": "bi-mouse2",
+      "title": "Події DOM: кліки, наведення, прокрутка",
+      "summary": "Події для інтерактиву (не валідації): click, mouseenter/leave, keydown, scroll, resize. Об'єкт event, делегування для динамічних елементів, jQuery vs vanilla vs Alpine." },
+
     { "id": "django-alpine", "section": "frontend", "icon": "bi-triangle",
       "title": "Alpine.js",
       "summary": "«Tailwind для JS»: інтерактив через атрибути (x-data, x-show, @click). Приклади вкладок і модалок на реальному коді цієї платформи, плюс Alpine з Django." },
