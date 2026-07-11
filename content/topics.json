@@ -92,6 +92,10 @@
       "title": "Валідація",
       "summary": "Чи треба JS-валідація для логіна, чи повторювати перевірки у view. Золоте правило: сервер валідує ЗАВЖДИ, клієнт лише для UX. HTML5 + Django Forms." },
 
+    { "id": "django-regex", "section": "forms", "icon": "bi-braces-asterisk",
+      "title": "Регулярні вирази (regex)",
+      "summary": "Як читати шаблони на кшталт email-regex і писати свої: якорі ^ $, класи [...], кількість + * {n,m}. Валідація логінів, паролів, телефонів через RegexValidator." },
+
     { "id": "django-auth-helpers", "section": "users", "icon": "bi-key",
       "title": "Автентифікація",
       "summary": "authenticate, login, logout, request.user, @login_required, create_user: готові інструменти входу (аналог Flask-Login)." },
