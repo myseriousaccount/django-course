@@ -339,41 +339,74 @@ class ReviewForm(forms.ModelForm):
 
 ## Реєстраційна форма: усі рівні разом
 
-Складімо все у форму реєстрації — тут працюють одразу всі механізми:
+Реєстрація — найкращий приклад, бо тут працюють **усі** механізми одночасно. Складімо повну, робочу форму й розберемо кожну частину:
 
-- **HTML5** — на полях стоять `required` та `type="email"` (браузер відсіє порожнє й криве).
-- **`clean_email`** — перевіряє **унікальність** пошти в базі (валідація одного поля).
-- **`clean`** — перевіряє, що пароль і підтвердження **збігаються** (міжпольова валідація).
-- **Пароль** — валідується через `AUTH_PASSWORD_VALIDATORS` (довжина, не надто поширений тощо).
+- **HTML5** — `required`, `type="email"` (браузер відсіє порожнє й криве);
+- **`clean_username`** — унікальність логіна (валідація одного поля);
+- **`clean_email`** — унікальність пошти;
+- **`clean_password`** — сила пароля через `AUTH_PASSWORD_VALIDATORS`;
+- **`clean`** — пароль і підтвердження **збігаються** (міжпольова);
+- **`save`** — пароль **хешується** перед збереженням (найважливіше!).
 
 ```python
 from django import forms
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
 
 class RegisterForm(forms.ModelForm):
-    password_confirm = forms.CharField(widget=forms.PasswordInput)
+    # пароль описуємо вручну, бо оброблятимемо його окремо (хешування)
+    password = forms.CharField(widget=forms.PasswordInput)
+    password_confirm = forms.CharField(widget=forms.PasswordInput, label="Повторіть пароль")
 
     class Meta:
         model = User
-        fields = ["username", "email", "password"]
-        widgets = {"password": forms.PasswordInput}
+        fields = ["username", "email"]      # password НЕ тут — керуємо ним самі
+
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("Такий логін уже зайнятий.")
+        return username
 
     def clean_email(self):
         email = self.cleaned_data["email"]
-        if User.objects.filter(email=email).exists():
+        if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Ця пошта вже зайнята.")
         return email
+
+    def clean_password(self):
+        password = self.cleaned_data["password"]
+        validate_password(password)         # запускає AUTH_PASSWORD_VALIDATORS
+        return password
 
     def clean(self):
         cleaned = super().clean()
         if cleaned.get("password") != cleaned.get("password_confirm"):
             self.add_error("password_confirm", "Паролі не збігаються.")
         return cleaned
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password"])  # ← ХЕШУЄ пароль
+        if commit:
+            user.save()
+        return user
 ```
 
-Правило унікальності описане **один раз** — у формі. JS може продублювати його для UX, але істину зберігає сервер.
+Що тут відбувається по рівнях:
+
+- **`clean_username` / `clean_email`** — окремо перевіряють унікальність (`__iexact` — без урахування регістру, щоб `Olena` й `olena` вважались тим самим).
+- **`clean_password`** викликає `validate_password()` — саме він застосовує `AUTH_PASSWORD_VALIDATORS` (звичайний `ModelForm` **не** робить цього автоматично, тому робимо явно).
+- **`clean`** порівнює пароль і підтвердження — це стосується двох полів, тож місце йому тут, а не в `clean_<field>`.
+- **`save`** — ключове: `super().save(commit=False)` дає об'єкт, ще не записаний у БД, а `set_password()` **хешує** пароль перед збереженням.
+
+> <i class="bi bi-exclamation-triangle"></i> **Найчастіша й найнебезпечніша помилка реєстрації** — зберегти пароль напряму (`password=...` у моделі), і в базу потрапляє **чистий текст**. Пароль **завжди** проводять через `set_password()`, який його хешує; перевіряють потім через `check_password()`. Ніколи не пиши сирий пароль у поле.
+
+> <i class="bi bi-info-circle"></i> Django має готову форму **`UserCreationForm`** (`django.contrib.auth.forms`), яка вже робить підтвердження пароля, `validate_password` і хешування. Свою пишуть, коли треба **свої** поля/правила; але важливо розуміти, що саме вона робить під капотом — а це якраз те, що ми зібрали вручну вище.
+
+Правила описані **один раз** — у формі. JS може продублювати їх для UX, але істину зберігає сервер.
 
 ## Як помилки повертаються користувачу
 
