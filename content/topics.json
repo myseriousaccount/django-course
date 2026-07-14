@@ -108,6 +108,10 @@
       "title": "Адмін-панель",
       "summary": "ModelAdmin: list_display, list_filter, search_fields, @admin.register, inlines, actions, fieldsets. Як зробити вбудовану адмін-панель зручною." },
 
+    { "id": "django-admin-fields", "section": "users", "icon": "bi-sliders",
+      "title": "Адмінка: зручні поля й віджети",
+      "summary": "Нестандартні поля у формі: filter_horizontal/autocomplete/raw_id для зв'язків, radio_fields, prepopulated_fields, прев'ю зображень, formfield_overrides, календар дат." },
+
     { "id": "django-contrib-batteries", "section": "users", "icon": "bi-battery-charging",
       "title": "Вбудовані застосунки",
       "summary": "Admin, auth, sessions, messages як звичайні apps: що вони дають з коробки і як вбудовані в проєкт." },
