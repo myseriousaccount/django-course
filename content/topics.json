@@ -8,7 +8,8 @@
     { "id": "forms",        "title": "6. Форми" },
     { "id": "users",        "title": "7. Користувачі та адмінка" },
     { "id": "architecture", "title": "8. Архітектура та якість" },
-    { "id": "frontend",     "title": "9. Фронтенд та інтерактив" }
+    { "id": "frontend",     "title": "9. Фронтенд та інтерактив" },
+    { "id": "deploy",       "title": "10. Тестування і деплой" }
   ],
   "topics": [
 
@@ -68,6 +69,10 @@
       "title": "Запити до бази (ORM)",
       "summary": "all/filter/get/exclude/order_by/count/exists/first, field lookups (__gte, __icontains), create/update/delete, Q і F: робота з БД без SQL." },
 
+    { "id": "django-query-optimization", "section": "data", "icon": "bi-speedometer2",
+      "title": "Оптимізація запитів",
+      "summary": "Проблема N+1, select_related (FK) і prefetch_related (M2M/зворотні зв'язки), only/defer, count vs len. Як не робити сотні зайвих запитів до БД." },
+
     { "id": "django-templates", "section": "templates", "icon": "bi-layout-text-window-reverse",
       "title": "Шаблони",
       "summary": "{% extends %}, {% block %}, base.html, DIRS vs APP_DIRS. Як не дублювати HTML, з прикладами наслідування шаблонів." },
@@ -83,6 +88,18 @@
     { "id": "django-pagination", "section": "templates", "icon": "bi-list-ol",
       "title": "Пагінація",
       "summary": "Paginator, get_page, has_next/has_previous, num_pages: розбивка довгих списків (статті, товари, книги) на сторінки, у view і в шаблоні." },
+
+    { "id": "django-context-processors", "section": "templates", "icon": "bi-globe",
+      "title": "Context processors",
+      "summary": "Як передати дані в КОЖЕН шаблон без повторення у views: власний процесор контексту й реєстрація в settings. Приклад — категорії/кошик у шапці на всіх сторінках." },
+
+    { "id": "django-files-images", "section": "templates", "icon": "bi-image",
+      "title": "Файли та зображення",
+      "summary": "ImageField/FileField, upload_to, MEDIA_URL/ROOT, форма з request.FILES, показ картинки в шаблоні через .url. Повний цикл завантаження й віддачі медіа." },
+
+    { "id": "django-template-tags-custom", "section": "templates", "icon": "bi-code-square",
+      "title": "Власні теги й фільтри",
+      "summary": "Коли вбудованих замало: папка templatetags/, @register.simple_tag, @register.filter, inclusion_tag. Свої фільтри форматування й теги (сума кошика тощо)." },
 
     { "id": "django-forms", "section": "forms", "icon": "bi-input-cursor-text",
       "title": "Форми",
@@ -116,6 +133,10 @@
       "title": "Вбудовані застосунки",
       "summary": "Admin, auth, sessions, messages як звичайні apps: що вони дають з коробки і як вбудовані в проєкт." },
 
+    { "id": "django-sessions-cart", "section": "users", "icon": "bi-cart3",
+      "title": "Сесії та кошик",
+      "summary": "request.session: як зберігати стан між запитами без окремої таблиці. Класичний приклад — кошик магазину: додати/прибрати товар, лічильник, очищення." },
+
     { "id": "django-request-lifecycle", "section": "architecture", "icon": "bi-arrow-repeat",
       "title": "Цикл запиту й middleware",
       "summary": "Повний шлях запиту: Middleware → URLconf → View → Response. Що таке middleware і чому порядок у списку важливий." },
@@ -136,6 +157,10 @@
       "title": "dev vs prod і секрети",
       "summary": "DEBUG, SECRET_KEY, ALLOWED_HOSTS, винесення секретів у env-змінні, чому не можна тримати ключі в коді." },
 
+    { "id": "django-signals", "section": "architecture", "icon": "bi-broadcast-pin",
+      "title": "Сигнали (signals)",
+      "summary": "post_save/pre_save/pre_delete, @receiver: реагувати на події моделі (створити профіль після реєстрації, оновити склад). Коли доречно, а коли краще метод чи сервіс." },
+
     { "id": "django-javascript", "section": "frontend", "icon": "bi-filetype-js",
       "title": "JavaScript у Django",
       "summary": "Django рендерить HTML на сервері, JS додає інтерактив у браузері: коли він потрібен (модалки, AJAX/fetch), CSRF-пастка, htmx/Alpine замість гори коду." },
@@ -154,7 +179,15 @@
 
     { "id": "django-ajax-when", "section": "frontend", "icon": "bi-arrow-left-right",
       "title": "AJAX: коли застосовувати",
-      "summary": "Розвіюємо міф «AJAX для БД». Насправді це запит до сервера без перезавантаження сторінки. Коли варто, коли ні, правило вибору." }
+      "summary": "Розвіюємо міф «AJAX для БД». Насправді це запит до сервера без перезавантаження сторінки. Коли варто, коли ні, правило вибору." },
+
+    { "id": "django-testing", "section": "deploy", "icon": "bi-clipboard-check",
+      "title": "Тестування",
+      "summary": "Навіщо тести, TestCase, self.client для перевірки views, тести моделей і форм, запуск python manage.py test. Основи, щоб код не ламався непомітно." },
+
+    { "id": "django-deployment", "section": "deploy", "icon": "bi-rocket-takeoff",
+      "title": "Деплой",
+      "summary": "Як викласти Django на бойовий сервер: DEBUG=False, collectstatic, WSGI/Gunicorn, WhiteNoise чи Nginx, env-змінні, база. Чеклист перед продакшном." }
 
   ]
 }
