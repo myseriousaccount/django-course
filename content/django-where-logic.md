@@ -87,6 +87,37 @@ class Post(models.Model):
 
 ## Рішення 2: кастомний менеджер (логіка про набір об'єктів)
 
+### Метод моделі чи метод менеджера
+
+Обидва пишуться в `models.py` і обидва починаються з `self`, тому їх легко переплутати. Різниця в тому, що саме означає `self`:
+
+| Клас | `self` — це | Приклад методу |
+|---|---|---|
+| `class CartItem(models.Model)` | **один рядок** таблиці | `subtotal` — ціна × кількість цього рядка |
+| `class CartItemQuerySet(models.QuerySet)` | **набір рядків** | `total_price`, `items_count` — підсумки по всьому набору |
+
+```python
+# carts/models.py
+class CartItem(models.Model):
+    ...
+
+    @property
+    def subtotal(self):
+        return self.product.price * self.quantity      # self — цей рядок
+
+
+class CartItemQuerySet(models.QuerySet):
+    def total_price(self):
+        return sum((item.subtotal for item in self), Decimal('0.00'))   # self — набір
+```
+
+Верхній рівень використовує нижній: рядок знає власну суму, набір складає їх разом.
+
+Мірило для вибору: якщо для обчислення достатньо **одного** об'єкта — це метод моделі; якщо треба перебрати **кілька** — метод менеджера.
+
+> <i class="bi bi-exclamation-triangle"></i> `self.product` у методі моделі — це **один** пов'язаний об'єкт (`ForeignKey`), тому `self.product.all()` дає `AttributeError`. Метод `.all()` є лише у `ManyToManyField` і в зворотних зв'язках: `post.comments.all()`, `movie.genres.all()`.
+
+
 **Менеджер** — це той самий `objects`, через який ти робиш `.all()`, `.filter()`, `.get()`. Django дає стандартний `Model.objects`, але ти можеш написати **власний менеджер** з іменованими запитами.
 
 Якщо метод моделі — про **один** об'єкт, то менеджер — про **набір** об'єктів. Коли той самий `filter(...)` повторюється у кількох views, винеси його в менеджер під зрозумілою назвою:
