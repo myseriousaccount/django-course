@@ -61,6 +61,10 @@
       "title": "Створення моделі",
       "summary": "Повний робочий процес: від класу в models.py до makemigrations/migrate й адмінки. Best practices, __str__/Meta, і що насправді означає «зареєструвати модель»." },
 
+    { "id": "django-migrations", "section": "data", "icon": "bi-layers",
+      "title": "Міграції",
+      "summary": "makemigrations і migrate, showmigrations, sqlmigrate, нове обовʼязкове поле, обмеження на таблиці з даними, RunPython, відкат і злиття конфліктів." },
+
     { "id": "django-model-fields", "section": "data", "icon": "bi-bricks",
       "title": "Поля та зв'язки",
       "summary": "Типи полів (Char/Text/Decimal/DateTime/Image…), опції (null/blank/default/choices), зв'язки ForeignKey/ManyToMany/OneToOne, Meta та __str__." },
