@@ -202,6 +202,45 @@ def total_price(self):
 
 По-перше, кожне звернення до `item.product` — окремий запит, якщо у вибірці немає `select_related('product')`. По-друге, `sum()` без початкового значення повертає на порожньому наборі ціле `0`, а не `Decimal('0.00')`, і це згодом дає `'0'` замість `'0.00'` у відповіді або помилку при складанні з іншим `Decimal`.
 
+### Як вивести такий метод самому
+
+Метод менеджера — це перенесений код із view, а не окрема конструкція. Виводиться він у три кроки.
+
+Спершу звичайний код у view:
+
+```python
+# carts/views.py
+items = CartItem.objects.filter(user=request.user)
+total = Decimal('0.00')
+for item in items:
+    total += item.product.price * item.quantity
+```
+
+Далі той самий код переїжджає в клас: вибірка всередині методу вже є — це `self`, тому звернення до `objects.filter(...)` звідти зникає.
+
+```python
+# carts/models.py
+class CartItemQuerySet(models.QuerySet):
+    def total_price(self):
+        total = Decimal('0.00')
+        for item in self:                 # було: for item in items
+            total += item.product.price * item.quantity
+        return total
+```
+
+Цей варіант уже робочий. Останній крок — переклад циклу на запит до бази, рядок у рядок:
+
+| У циклі | В `aggregate()` |
+|---|---|
+| `for item in self` | `self.aggregate(...)` — рядки обходить база |
+| `item.product.price` | `F('product__price')` |
+| `item.quantity` | `F('quantity')` |
+| множення між ними | `F(...) * F(...)` |
+| `total +=` | `Sum(...)` |
+| початкове значення | `or Decimal('0.00')` для порожньої вибірки |
+
+Нової логіки на третьому кроці не з'являється — змінюється лише те, хто виконує обчислення: Python чи база.
+
 ### QuerySet чи Manager
 
 `QuerySet.as_manager()` — сучасний спосіб: методи доступні і на `Model.objects`, і на будь-якому проміжному наборі, тому ланцюжки працюють. Окремий клас `models.Manager` потрібен рідше — коли метод не стосується вибірки взагалі (наприклад, створює об'єкт за складними правилами) або коли треба змінити базовий набір для всієї моделі:
