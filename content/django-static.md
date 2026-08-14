@@ -1,12 +1,13 @@
-# Статика: структура та роздача
+# Статичні файли
 
-«Статика» (static files) — це файли, що не змінюються від запиту до запиту: **CSS, JavaScript, картинки, шрифти**. Архітектурне питання тут: де вони лежать і як Django віддає їх браузеру — причому в розробці й на проді це працює **по-різному**. Приклади навмисно з **різних доменів** (блог, магазин, бібліотека), щоб механізм не зливався з одним проєктом.
+Статика — файли, що не залежать від запиту: CSS, JavaScript, зображення, шрифти. Урок про те, де вони лежать, як потрапляють у розмітку і чому в розробці та на бойовому сервері їх роздають різні програми.
 
 ## Три `STATIC_*` параметри + MEDIA
 
 За статику відповідає кілька налаштувань у `settings.py`. Їх часто плутають — розберемо кожне:
 
 ```python
+# config/settings.py
 STATIC_URL = 'static/'                      # URL-префікс, за яким доступна статика
 STATICFILES_DIRS = [BASE_DIR / 'static']    # де лежать ТВОЇ статичні файли (dev)
 STATIC_ROOT = BASE_DIR / 'staticfiles'      # куди collectstatic збирає все (prod)
@@ -43,22 +44,19 @@ static/
 
 ## Як підключити статику в шаблоні
 
-**Як це працює.** Потрібні два кроки. По-перше, вгорі шаблону завантаж теги статики (це вже є у спільному `_layouts/base.html`):
+Потрібні два кроки. Спершу — завантажити теги статики вгорі шаблону (зазвичай це вже є у спільному `_layouts/base.html`):
 
 ```html
+{# templates/_layouts/base.html #}
 {% load static %}
 ```
 
-По-друге, будуй посилання через тег `{% static %}`, а не хардкодом. Приклади з різних доменів:
+Далі посилання будують тегом `{% static %}`, а не рядком:
 
 ```html
-<!-- блог -->
+{# templates/blog/post_list.html #}
 <link rel="stylesheet" href="{% static 'css/blog.css' %}">
-
-<!-- магазин -->
 <script src="{% static 'js/cart.js' %}"></script>
-
-<!-- бібліотека: картинка-заглушка для книги без обкладинки -->
 <img src="{% static 'img/book-placeholder.svg' %}" alt="Без обкладинки">
 ```
 
@@ -82,13 +80,14 @@ python manage.py collectstatic
 
 Звідти все віддає вебсервер одним махом.
 
-> <i class="bi bi-lightbulb"></i> Аналогія: у розробці статику роздає сам кухар (Django) — повільно, зате просто. На проді кухар готує лише страви (динамічні сторінки), а напої (статику) видає окремий бармен (Nginx). `collectstatic` — це коли ти заздалегідь складаєш усі напої з різних барів в один холодильник.
+Причина розділення в тому, що віддавати файли з диска ефективно вміє вебсервер, а не Python-процес: він робить це швидше, кешує й не займає робочі потоки застосунку.
 
 ## MEDIA: файли, які завантажують користувачі
 
 Статика — це файли **розробника** (CSS, JS, логотип). Але є ще файли, які завантажують **користувачі**: аватар автора блогу, фото товару в магазині, скан обкладинки книги. Для них — окремий механізм: **MEDIA**.
 
 ```python
+# config/settings.py
 MEDIA_URL = 'media/'                 # URL-префікс: /media/...
 MEDIA_ROOT = BASE_DIR / 'media'      # папка на диску, куди зберігаються завантаження
 ```
@@ -104,6 +103,7 @@ MEDIA_ROOT = BASE_DIR / 'media'      # папка на диску, куди зб
 У моделі поле `ImageField`/`FileField` кладе файл у `MEDIA_ROOT`:
 
 ```python
+# library/models.py
 class Book(models.Model):
     title = models.CharField(max_length=200)
     cover = models.ImageField(upload_to='covers/')   # → media/covers/...
@@ -112,30 +112,38 @@ class Book(models.Model):
 А в шаблоні до нього звертаються **не** через `{% static %}`, а через саме поле:
 
 ```html
-<img src="{{ book.cover.url }}" alt="{{ book.title }}">   <!-- /media/covers/dune.jpg -->
+{# templates/library/book_detail.html #}
+<img src="{{ book.cover.url }}" alt="{{ book.title }}">   {# /media/covers/dune.jpg #}
 ```
 
-> <i class="bi bi-info-circle"></i> У розробці, щоб `runserver` віддавав media-файли, у `root/urls.py` додають:
-> ```python
-> from django.conf import settings
-> from django.conf.urls.static import static
-> urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-> ```
-> На проді media, як і статику, роздає вебсервер.
+У режимі розробки роздачу медіафайлів вмикають у головних маршрутах:
 
-## `staticfiles` — це теж app
+```python
+# config/urls.py
+from django.conf import settings
+from django.conf.urls.static import static
 
-Зверни увагу: у `INSTALLED_APPS` є `'django.contrib.staticfiles'`. Саме цей вбудований app дає тег `{% static %}` і команду `collectstatic`. Тобто робота зі статикою — це ще одна «батарейка» Django (про батарейки — окрема тема).
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+```
+
+На бойовому сервері медіа, як і статику, роздає вебсервер.
+
+## Звідки береться сам механізм
+
+Тег `{% static %}` і команда `collectstatic` — це вбудований застосунок `django.contrib.staticfiles` зі списку `INSTALLED_APPS`. Прибрати його зі списку означає втратити і тег, і команду.
 
 ## Типові помилки / Нюанси
 
-> <i class="bi bi-exclamation-octagon"></i> Забути `{% load static %}` вгорі шаблону → тег `{% static %}` не спрацює (`Invalid block tag 'static'`).
-
-> <i class="bi bi-exclamation-octagon"></i> Писати `href="/static/css/blog.css"` хардкодом → працює в dev, але ламається, якщо зміниш `STATIC_URL` чи додаси CDN.
-
-> <i class="bi bi-exclamation-octagon"></i> Чекати, що статика «сама з'явиться» на проді без `collectstatic` → при `DEBUG=False` її ніхто не роздасть (сторінка буде без стилів).
-
-> <i class="bi bi-exclamation-octagon"></i> Плутати MEDIA і STATIC: звертатися до завантаженої користувачем картинки через `{% static %}`. Для завантажень — `{{ obj.field.url }}`, а не `{% static %}`.
+| Що не так | Наслідок і як правильно |
+|---|---|
+| Немає `{% load static %}` у шаблоні | `Invalid block tag 'static'`; тег завантажують у кожному файлі, де він потрібен |
+| Шлях написаний рядком: `href="/static/css/blog.css"` | Ламається після зміни `STATIC_URL` або переходу на CDN; шлях будує `{% static %}` |
+| `DEBUG = False` без `collectstatic` | Сторінка відкривається без стилів: у цьому режимі Django статику не роздає |
+| Плутати `STATICFILES_DIRS` і `STATIC_ROOT` | Перше — джерела, друге — папка збору для сервера. Якщо вказати те саме значення, `collectstatic` спробує копіювати папку саму в себе |
+| `{% static %}` для завантаженого користувачем файлу | Посилання веде в нікуди: медіа доступні через `{{ obj.field.url }}` |
+| `STATIC_ROOT` у git | У репозиторій потрапляють згенеровані копії файлів; цю папку додають у `.gitignore` |
+| Медіа в тій самій папці, що й статика | Файли користувачів затираються при деплої й потрапляють у git |
 
 ## Підсумок
 

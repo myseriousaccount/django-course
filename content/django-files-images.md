@@ -1,15 +1,17 @@
-# Файли та зображення: завантаження й показ
+# Файли та зображення
 
-Досі дані в моделях були текст і числа. Але користувачі часто хочуть завантажити **файл** — аватар, фото товару, скан обкладинки книги. Цей урок про повний цикл роботи із завантаженнями: як описати поле в моделі, налаштувати media, прийняти файл із форми й показати його в шаблоні. Приклади навмисно з **різних доменів** (профіль, магазин, бібліотека).
+Завантажені користувачем файли зберігаються на диску, а в базі лишається лише шлях до них. Урок про повний цикл: поле моделі, налаштування медіа, приймання файлу з форми й виведення в шаблоні.
 
 ## `FileField` і `ImageField` у моделі
 
 > **`FileField`** — поле моделі для будь-якого файлу. **`ImageField`** — його різновид **саме для картинок** (додатково перевіряє, що це справді зображення, і дає доступ до `.width`/`.height`).
 
-**Як це працює.** Обидва мають обов'язковий-за-звичкою параметр `upload_to` — підпапку всередині media, куди складати завантажене:
+Обидва приймають параметр `upload_to` — підпапку всередині media, куди складати завантажене:
 
 ```python
+# accounts/models.py
 from django.db import models
+
 
 class Profile(models.Model):
     avatar = models.ImageField(upload_to='avatars/')          # профіль
@@ -31,7 +33,7 @@ class Book(models.Model):
 Куди Django кладе завантаження й за якою адресою їх віддавати — задають два параметри в `settings.py` (згадай урок «Статичні файли», де ми відрізняли **static** — файли розробника — від **media** — файли користувачів):
 
 ```python
-# settings.py
+# config/settings.py
 MEDIA_URL = 'media/'                  # URL-префікс: файли доступні як /media/...
 MEDIA_ROOT = BASE_DIR / 'media'       # папка НА ДИСКУ, куди фізично лягають завантаження
 ```
@@ -39,7 +41,7 @@ MEDIA_ROOT = BASE_DIR / 'media'       # папка НА ДИСКУ, куди ф�
 Але в режимі розробки цього мало — Django сам media не роздає, поки ти не додаси рядок у **головний** `urls.py`:
 
 ```python
-# root/urls.py
+# config/urls.py
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -60,6 +62,7 @@ if settings.DEBUG:
 **1. Тег форми з `enctype`.** Без цього браузер надішле лише ім'я файлу, а не сам файл:
 
 ```html
+{# templates/catalog/product_form.html #}
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
@@ -70,7 +73,8 @@ if settings.DEBUG:
 **2. У view передати у форму обидва словники** — `request.POST` **і** `request.FILES`:
 
 ```python
-form = ProductForm(request.POST, request.FILES)   # ← FILES обов'язково
+# catalog/views.py
+form = ProductForm(request.POST, request.FILES)   # FILES обов'язково
 ```
 
 **3. `form.save()`** сам збереже файл у `MEDIA_ROOT` і запише шлях у поле моделі.
@@ -81,18 +85,17 @@ form = ProductForm(request.POST, request.FILES)   # ← FILES обов'язко�
 
 Зберемо все докупи на прикладі товару в магазині.
 
-**Модель** (`catalog/models.py`):
-
 ```python
+# catalog/models.py
 class Product(models.Model):
     name = models.CharField(max_length=100)
     photo = models.ImageField(upload_to='products/')
 ```
 
-**Форма** (`catalog/forms.py`):
-
 ```python
+# catalog/forms.py
 from django import forms
+
 from .models import Product
 
 class ProductForm(forms.ModelForm):
@@ -101,10 +104,10 @@ class ProductForm(forms.ModelForm):
         fields = ['name', 'photo']
 ```
 
-**View** (`catalog/views.py`):
-
 ```python
-from django.shortcuts import render, redirect
+# catalog/views.py
+from django.shortcuts import redirect, render
+
 from .forms import ProductForm
 
 def product_create(request):
@@ -118,9 +121,10 @@ def product_create(request):
     return render(request, 'catalog/product_form.html', {'form': form})
 ```
 
-**Шаблон** (`product_form.html`) — та сама форма з `enctype`, що вище. А показати збережене фото так:
+Шаблон форми — той самий, що вище, з обов'язковим `enctype`. Збережене зображення виводять так:
 
 ```html
+{# templates/catalog/product_detail.html #}
 {% if product.photo %}
     <img src="{{ product.photo.url }}" alt="{{ product.name }}">
 {% else %}
@@ -135,8 +139,10 @@ def product_create(request):
 Одне поле `ImageField` — це одне фото. Щоб фото було **багато** (галерея товару, добірка обкладинок), роблять окрему модель, пов'язану **ForeignKey** з `related_name`:
 
 ```python
+# catalog/models.py
 class Product(models.Model):
     name = models.CharField(max_length=100)
+
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
@@ -147,6 +153,7 @@ class ProductImage(models.Model):
 Тепер у шаблоні `related_name='images'` дає зручний доступ до всіх фото товару:
 
 ```html
+{# templates/catalog/product_detail.html #}
 {% for img in product.images.all %}
     <figure>
         <img src="{{ img.image.url }}" alt="{{ img.caption }}">
@@ -155,27 +162,24 @@ class ProductImage(models.Model):
 {% endfor %}
 ```
 
-> <i class="bi bi-lightbulb"></i> Цей цикл по `product.images.all` — саме той випадок, де на списку товарів чигає N+1. У списку додай `.prefetch_related('images')` (урок «Оптимізація запитів»), щоб галереї не смикали базу окремо для кожного товару.
+> <i class="bi bi-exclamation-triangle"></i> Цикл `product.images.all` у списку товарів — типове джерело N+1: кожна картка робить окремий запит за своїми зображеннями. У view списку додають `.prefetch_related('images')`.
 
-## Місток: як це в shop-app
+## Два рівні одного механізму
 
-У навчальному проєкті shop-app усі три патерни вже задіяні:
-
-- `Product.photo = ImageField(upload_to='media/products/')` — **одне** фото товару.
-- `News.main_photo = ImageField(upload_to='media/news/')` — **головне** фото новини.
-- `NewsImage` — окрема модель галереї: `image = ImageField(...)` + `news = ForeignKey('News', related_name='images')`. Саме тому в шаблоні працює `news.images.all`, а у view списку стоїть `prefetch_related('images')`.
-
-Тобто shop-app показує обидва рівні: одне поле-картинка (`photo`, `main_photo`) і повноцінна галерея через FK з `related_name` (`NewsImage`).
+Одне поле-зображення (`Product.photo`, `News.main_photo`) і галерея через окрему модель зі зв'язком `ForeignKey(..., related_name='images')` — це не альтернативи, а різні задачі. Перше описує головне зображення об'єкта, друге — довільну їх кількість із власними підписами й порядком.
 
 ## Типові помилки / Нюанси
 
-> <i class="bi bi-exclamation-triangle"></i> `.url` vs `.path`. У шаблоні бери **`.url`** (`/media/products/x.jpg`) — це адреса для браузера. **`.path`** (`/home/.../media/products/x.jpg`) — абсолютний шлях на диску, потрібен у Python-коді, а не в `<img src>`.
-
-> <i class="bi bi-exclamation-triangle"></i> `ImageField` перевіряє лише, що файл — картинка. Обмежити **тип** (тільки PNG/JPG) чи **розмір** треба окремо — через власну валідацію у формі (урок «Валідація»). Не покладайся на те, що поле відсіє все саме.
-
-> <i class="bi bi-info-circle"></i> Рядок `static(settings.MEDIA_URL, ...)` в `urls.py` працює **тільки при `DEBUG=True`**. На проді media роздає вебсервер (Nginx), а не Django — так само, як зі static-файлами.
-
-> <i class="bi bi-pin-angle"></i> `upload_to` можна зробити функцією, щоб розкладати файли по датах чи ID користувача — але для навчального проєкту вистачає простого рядка-підпапки.
+| Що не так | Наслідок і як правильно |
+|---|---|
+| Форма без `enctype="multipart/form-data"` | Браузер надішле лише ім'я файлу; поле лишиться порожнім, помилки не буде |
+| `MyForm(request.POST)` без `request.FILES` | Той самий результат: файл не доходить до форми |
+| `{{ product.photo }}` замість `{{ product.photo.url }}` | У `src` потрапить шлях у базі, а не адреса; картинка не завантажиться |
+| Виведення `.url` без перевірки `{% if %}` | Порожнє поле дає `ValueError: The 'photo' attribute has no file associated with it` |
+| `ImageField` без Pillow | Міграція падає: `Cannot use ImageField because Pillow is not installed` |
+| Розрахунок на те, що `ImageField` усе перевірить | Він гарантує лише те, що файл — зображення. Розмір і формат обмежують валідацією у формі |
+| Медіа роздають через `static()` на продакшні | Цей рядок працює лише при `DEBUG=True`; на сервері медіа віддає вебсервер |
+| Файл видалено з бази, але лишився на диску | Django не видаляє файли при `delete()` моделі — це роблять окремо, сигналом або періодичною командою |
 
 ## Підсумок
 
