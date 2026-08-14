@@ -7,7 +7,7 @@
     { "id": "templates",    "title": "5. Шаблони та статика" },
     { "id": "forms",        "title": "6. Форми" },
     { "id": "users",        "title": "7. Користувачі та адмінка" },
-    { "id": "architecture", "title": "8. Архітектура та якість" },
+    { "id": "architecture", "title": "8. Бекенд-логіка та архітектура" },
     { "id": "frontend",     "title": "9. Фронтенд та інтерактив" },
     { "id": "deploy",       "title": "10. Тестування і деплой" }
   ],
@@ -131,19 +131,19 @@
 
     { "id": "django-contrib-batteries", "section": "users", "icon": "bi-battery-charging",
       "title": "Вбудовані застосунки",
-      "summary": "Admin, auth, sessions, messages як звичайні apps: що вони дають з коробки і як вбудовані в проєкт." },
+      "summary": "Чим застосунок відрізняється від модуля й бібліотеки тегів; admin, auth, sessions, messages, staticfiles, contenttypes: що кожен дає і як підключається." },
 
     { "id": "django-sessions-cart", "section": "users", "icon": "bi-cart3",
       "title": "Сесії та кошик",
       "summary": "request.session: як зберігати стан між запитами без окремої таблиці. Класичний приклад — кошик магазину: додати/прибрати товар, лічильник, очищення." },
 
-    { "id": "django-request-lifecycle", "section": "architecture", "icon": "bi-arrow-repeat",
-      "title": "Цикл запиту й middleware",
-      "summary": "Повний шлях запиту: Middleware → URLconf → View → Response. Що таке middleware і чому порядок у списку важливий." },
-
     { "id": "django-crud-flow", "section": "architecture", "icon": "bi-arrow-right-circle",
       "title": "Операції з даними",
       "summary": "Шість кроків будь-якої дії: тригер, адреса, view, перевірки, ORM, відповідь. Та сама операція формою і через AJAX, чеклист для власних дій (видалити, змінити кількість)." },
+
+    { "id": "django-request-lifecycle", "section": "architecture", "icon": "bi-arrow-repeat",
+      "title": "Цикл запиту й middleware",
+      "summary": "Повний шлях запиту: Middleware → URLconf → View → Response. Що таке middleware і чому порядок у списку важливий." },
 
     { "id": "django-where-logic", "section": "architecture", "icon": "bi-lightbulb",
       "title": "Де живе логіка",

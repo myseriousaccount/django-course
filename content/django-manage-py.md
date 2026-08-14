@@ -1,158 +1,135 @@
-# manage.py — твій пульт керування
+# Команди manage.py
 
-Кожна команда, яку ти набираєш у Django, починається з `python manage.py ...`. Розберемось, що це за файл, чому він такий важливий, і які команди ти будеш використовувати.
+`manage.py` — скрипт у корені проєкту, через який виконуються всі адміністративні команди Django. Він відрізняється від утиліти `django-admin` одним: знає, де лежать налаштування саме цього проєкту.
 
-## Що таке manage.py
-
-> **manage.py** — це невеликий Python-скрипт у корені проєкту (у shop-app: `root/manage.py`), що запускає адміністративні команди Django у контексті саме твого проєкту.
-
-**Як це працює.** Технічно `manage.py` робить одну ключову річ: вказує Django, де лежать твої налаштування.
+## Як він працює
 
 ```python
-# manage.py (спрощено)
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'root.settings')
+# manage.py
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 ```
 
-Цей рядок каже: «налаштування шукай у `root/settings.py`». Тому будь-яка команда через `manage.py` автоматично знає про твою БД, твої apps, твої шаблони.
-
-> <i class="bi bi-lightbulb"></i> Аналогія: `manage.py` — це **пульт від конкретного телевізора**. Існує універсальна команда `django-admin`, але `manage.py` — це той самий інструмент, уже «налаштований» на твій проєкт (через `DJANGO_SETTINGS_MODULE`). Тому в роботі ти майже завжди користуєшся `manage.py`, а не голим `django-admin`.
-
-## Як викликати команди
-
-Формат завжди однаковий:
+Цей рядок задає модуль налаштувань, тому будь-яка команда, запущена через `manage.py`, бачить твою базу, список застосунків і шаблони. Утиліта `django-admin` цього контексту не має, тому її використовують лише для `startproject`, коли налаштувань ще не існує.
 
 ```bash
 python manage.py <команда> [аргументи]
+python manage.py help                  # усі доступні команди
+python manage.py help migrate          # прапорці конкретної команди
 ```
 
-Подивитись усі доступні команди:
+Список команд не фіксований: кожен застосунок в `INSTALLED_APPS` може додавати власні. Тому `help` показує і команди Django, і команди сторонніх пакетів, і твої власні, якщо створиш папку `app/management/commands/`.
 
-```bash
-python manage.py help
-```
-
-Довідку по конкретній команді (усі її прапорці):
-
-```bash
-python manage.py help migrate
-python manage.py runserver --help
-```
-
-## Команди, які ти будеш використовувати найчастіше
+## Щоденні команди
 
 | Команда | Що робить |
 |---|---|
-| `runserver` | Запускає сервер розробки (порт 8000) |
-| `startapp <ім'я>` | Створює новий модуль (app) |
-| `makemigrations` | Готує міграції з твоїх змін у моделях |
-| `migrate` | Застосовує міграції до бази |
-| `createsuperuser` | Створює адміна для `/admin` |
-| `shell` | Інтерактивний Python із доступом до моделей |
-| `dbshell` | Відкриває клієнт самої БД (SQL напряму) |
-| `collectstatic` | Збирає статику для продакшну |
-| `test` | Запускає тести |
-| `check` | Перевіряє проєкт на типові проблеми |
+| `runserver` | сервер розробки на `127.0.0.1:8000` |
+| `startapp <ім'я>` | створює каркас застосунку |
+| `makemigrations` | створює файли міграцій зі змін у моделях |
+| `migrate` | застосовує міграції до бази |
+| `createsuperuser` | створює користувача з доступом до `/admin` |
+| `shell` | інтерактивний Python із налаштованим доступом до моделей |
+| `test` | запускає тести |
+| `check` | перевіряє проєкт на типові проблеми без запуску сервера |
 
-І кілька команд, що трапляються рідше, але корисні знати:
+## Команди, потрібні рідше
 
 | Команда | Що робить |
 |---|---|
-| `showmigrations` | Показує, які міграції застосовані, а які ні |
-| `sqlmigrate <app> <номер>` | Показує SQL, який згенерує міграція (без виконання) |
-| `flush` | Очищає всі дані з БД (структуру лишає) |
-| `dumpdata` / `loaddata` | Експорт / імпорт даних (фікстури) |
-| `changepassword <user>` | Змінює пароль користувача |
-| `makemessages` / `compilemessages` | Робота з перекладами (i18n) |
+| `showmigrations` | перелік міграцій із позначкою, які застосовані |
+| `sqlmigrate <app> <номер>` | показує SQL міграції, не виконуючи його |
+| `dbshell` | відкриває консоль самої бази |
+| `dumpdata` / `loaddata` | експорт і імпорт даних (фікстури) |
+| `changepassword <user>` | зміна пароля користувача |
+| `collectstatic` | збирає статику в одну папку для продакшну |
+| `flush` | видаляє всі дані, лишаючи структуру таблиць |
+| `makemessages` / `compilemessages` | робота з перекладами |
 
-## Найважливіша пара: makemigrations + migrate
+## makemigrations і migrate
 
-**Навіщо.** Це те, що в Flask ти робила через Flask-Migrate. У Django — вбудовано і у два кроки:
-
-```bash
-# 1. Ти змінила models.py → Django готує "інструкцію" зміни БД
-python manage.py makemigrations
-
-# 2. Django виконує цю інструкцію — реально змінює таблиці
-python manage.py migrate
-```
-
-**Як це працює — поділ ролей:**
-
-- `makemigrations` — **пише план** (створює файл у папці `migrations/`), базу ще не чіпає.
-- `migrate` — **виконує план** у реальній базі.
-
-Приклад: додала до моделі `Book` бібліотеки нове поле `isbn`. `makemigrations` створить файл `0002_book_isbn.py` з описом зміни, а `migrate` реально додасть колонку `isbn` у таблицю.
-
-> <i class="bi bi-info-circle"></i> Чому два кроки? Бо файл-міграція потрапляє в git, і вся команда накатує однакові зміни через `migrate`. Це акуратна історія змін схеми БД. `showmigrations` покаже, що вже застосовано, а `sqlmigrate` — який саме SQL виконається.
-
-## startapp — створити модуль
-
-**Як це працює.** Коли в проєкті з'являється новий розділ, для нього створюють окремий app. Приклади з різних доменів:
+Зміна схеми бази виконується у два кроки, і це поділ ролей, а не формальність:
 
 ```bash
-python manage.py startapp blog       # блог-платформа: пости, коментарі
-python manage.py startapp movies     # кіно-довідник: фільми, актори
-python manage.py startapp library    # бібліотека: книги, читачі
+python manage.py makemigrations    # 1. описати зміну у файлі міграції
+python manage.py migrate           # 2. виконати її в базі
 ```
 
-Django згенерує папку з усіма потрібними файлами (`models.py`, `views.py`, `admin.py`, `apps.py`, `tests.py`, `migrations/`). Далі модуль треба «увімкнути» — додати в `INSTALLED_APPS` (про це — у розділі про apps).
+`makemigrations` порівнює поточні моделі з попередніми міграціями й створює файл, наприклад `blog/migrations/0002_post_slug.py`. База при цьому не змінюється. `migrate` бере всі незастосовані файли й виконує їх.
 
-## shell — Python з доступом до моделей
+Розділення потрібне тому, що файл міграції потрапляє в git: на іншій машині й на сервері схема оновлюється тією самою послідовністю кроків, а не повторним «вгадуванням» змін. Перед виконанням можна подивитися, що саме станеться:
 
-**Навіщо.** Швидко перевірити запит до БД чи створити об'єкт без написання view.
+```bash
+python manage.py showmigrations blog
+python manage.py sqlmigrate blog 0002
+```
+
+> <i class="bi bi-exclamation-triangle"></i> Міграції — частина коду, а не тимчасові файли. Їх комітять разом із моделями; видалення чи ручне редагування вже застосованих міграцій ламає історію схеми в інших копіях проєкту.
+
+## shell
 
 ```bash
 python manage.py shell
 ```
 
-Усередині вже налаштований доступ до твоїх моделей:
-
 ```python
 >>> from blog.models import Post
 >>> Post.objects.count()
 42
->>> Post.objects.create(title='Привіт', body='Перший пост')
+>>> Post.objects.create(title='Перший пост', body='Текст')
 ```
 
-> <i class="bi bi-info-circle"></i> Це саме `manage.py shell`, а не звичайний `python`: перший знає про `DJANGO_SETTINGS_MODULE`, тому моделі й БД доступні одразу.
+Звичайний `python` тут не підійде: без `DJANGO_SETTINGS_MODULE` імпорт моделей завершиться помилкою `ImproperlyConfigured`. Оболонка зручна, щоб перевірити запит або подивитися, що реально лежить у базі, не пишучи view.
 
-## createsuperuser — доступ до адмінки
-
-Django має готову адмін-панель на `/admin`. Щоб зайти, потрібен суперкористувач:
+## createsuperuser
 
 ```bash
 python manage.py createsuperuser
-# далі введеш username, email, пароль
 ```
 
-Після цього `http://127.0.0.1:8000/admin/` пустить тебе у вбудовану панель керування даними — без жодного рядка коду.
+Команда запитає логін, email і пароль та створить користувача з прапорцями `is_staff` і `is_superuser`. Після цього `/admin` пускає в панель керування даними. Пароль зберігається хешем, тож відновити його неможливо — забутий пароль змінюють командою `changepassword`.
 
-## manage.py vs django-admin
+## Власні команди
 
-| | `django-admin` | `manage.py` |
-|---|---|---|
-| Прив'язка до проєкту | **Не знає** про конкретний проєкт | Прив'язаний через `DJANGO_SETTINGS_MODULE` |
-| Коли використовуєш | Лише `startproject` (проєкту ще нема) | Усе решта |
+Будь-яку рутину можна оформити як команду `manage.py` — це штатний спосіб писати скрипти обслуговування, які мають доступ до моделей:
 
-**Нюанс.** `startproject` ти запускаєш через `django-admin` (бо проєкту ще нема). А **все інше** — через `manage.py`.
+```python
+# blog/management/commands/clear_drafts.py
+from django.core.management.base import BaseCommand
+from blog.models import Post
+
+
+class Command(BaseCommand):
+    help = 'Видаляє чернетки, старші за 30 днів'
+
+    def handle(self, *args, **options):
+        deleted, _ = Post.objects.filter(is_draft=True).delete()
+        self.stdout.write(self.style.SUCCESS(f'Видалено: {deleted}'))
+```
+
+```bash
+python manage.py clear_drafts
+```
+
+Потрібні порожні `__init__.py` у папках `management/` і `management/commands/`. Такі команди зручно ставити в планувальник (cron), на відміну від коду, який виконується лише при заході користувача на сторінку.
 
 ## Типові помилки / Нюанси
 
-> <i class="bi bi-exclamation-triangle"></i> **`No changes detected` після зміни моделі** → app не в `INSTALLED_APPS`, або файл не збережено. Django «не бачить» модель, тому й міграцію не робить.
-
-> <i class="bi bi-exclamation-triangle"></i> **Забула `migrate` після `makemigrations`** → міграція є, але база не змінена. Помилки типу `no such column`. Правило: змінила модель → `makemigrations` → `migrate`.
-
-> <i class="bi bi-exclamation-triangle"></i> **`python manage.py` без активованого venv** → або «command not found», або запуск не тим Python. Спочатку активуй середовище (`(venv)` у рядку).
-
-> <i class="bi bi-info-circle"></i> **Забула, як зветься команда?** `python manage.py help` дасть повний список, а `help <команда>` — усі її прапорці.
+| Що не так | Наслідок і як правильно |
+|---|---|
+| `No changes detected` після зміни моделі | Застосунку немає в `INSTALLED_APPS` або файл не збережено — Django не бачить модель |
+| Виконано `makemigrations` без `migrate` | Файл міграції є, база стара; на сторінках з'являється `no such column` |
+| `python manage.py` без активованого середовища | Команда не знайдеться або запуститься іншим інтерпретатором без Django |
+| `django-admin migrate` замість `manage.py migrate` | `ImproperlyConfigured: settings are not configured` — утиліта не знає, де налаштування |
+| Ручне редагування застосованої міграції | Історія схеми розходиться між копіями проєкту. Зміну оформлюють новою міграцією |
+| `python` замість `manage.py shell` | Імпорт моделей падає з `ImproperlyConfigured` |
 
 ## Підсумок
 
-- `manage.py` — скрипт-«пульт», що виконує команди в контексті твого проєкту (знає про `root.settings` через `DJANGO_SETTINGS_MODULE`).
-- Формат: `python manage.py <команда>`; `help` — список команд, `help <команда>` — її прапорці.
-- Щоденні: `runserver`, `startapp`, `makemigrations` + `migrate`, `createsuperuser`, `shell`.
-- Корисні рідше: `showmigrations`, `sqlmigrate`, `check`, `dbshell`, `dumpdata`/`loaddata`, `collectstatic`, `test`.
-- `makemigrations` пише план змін БД, `migrate` його виконує — два окремі кроки.
-- `startproject` → через `django-admin`; усе решта → через `manage.py`.
+- `manage.py` виконує команди в контексті проєкту завдяки `DJANGO_SETTINGS_MODULE`; `django-admin` потрібен лише для `startproject`.
+- `help` показує повний список команд, `help <команда>` — її прапорці; набір команд залежить від встановлених застосунків.
+- Щоденні: `runserver`, `startapp`, `makemigrations`, `migrate`, `createsuperuser`, `shell`, `test`, `check`.
+- `makemigrations` описує зміну у файлі, `migrate` виконує її в базі; файли міграцій комітять, бо саме вони відтворюють схему в інших копіях проєкту.
+- `showmigrations` і `sqlmigrate` показують стан та SQL до виконання.
+- Рутинні скрипти оформлюють як власні команди в `app/management/commands/` — вони мають доступ до моделей і запускаються з планувальника.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/ref/django-admin/" target="_blank" rel="noopener">django-admin and manage.py <i class="bi bi-box-arrow-up-right"></i></a></div></div>

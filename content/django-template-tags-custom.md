@@ -1,195 +1,214 @@
 # Власні теги й фільтри шаблонів
 
-Вбудованих тегів і фільтрів Django багато, але рано чи пізно їх бракує: відформатувати ціну як `25 000 ₴`, порахувати суму кошика, намалювати зірочки рейтингу. Цей урок пояснює, як створити **власні** теги й фільтри. Приклади навмисно з **різних доменів** (магазин, блог, рейтинг фільму), щоб ти бачила: механізм універсальний.
+Мова шаблонів Django навмисно обмежена: у ній немає довільних Python-виразів. Коли вбудованих тегів і фільтрів бракує, потрібну операцію описують Python-функцією і реєструють як розширення шаблонної мови. Видів розширень три, і вони відрізняються тим, що приймають і що повертають.
 
-## Навіщо власні теги й фільтри
+## Який вид обрати
 
-> **Власний тег/фільтр** — це твоя Python-функція, яку можна викликати прямо в шаблоні. Він розширює мову шаблонів там, де вбудованих засобів замало.
+| Вид | Виклик у шаблоні | Аргументи | Повертає | Доступ до контексту |
+|---|---|---|---|---|
+| `@register.filter` | `{{ value\|name:arg }}` | значення + максимум **один** аргумент | значення | немає |
+| `@register.simple_tag` | `{% name a b key=c %}` | скільки завгодно, зокрема іменовані | значення | за `takes_context=True` |
+| `@register.inclusion_tag` | `{% name a %}` | скільки завгодно | відрендерений HTML-фрагмент | за `takes_context=True` |
 
-**Навіщо.** Щоб винести повторювану логіку відображення з шаблонів у Python. Порівняй:
+Практичний критерій: перетворюєш одне значення — фільтр; обчислюєш результат із кількох даних — `simple_tag`; треба вставити готовий шматок розмітки — `inclusion_tag`.
 
-```html
-{# без власного фільтра — логіка «протікає» в HTML #}
-{{ price|floatformat:0 }} грн, розряди руками...
-```
+## Де живе код
 
-```html
-{# з власним фільтром — чисто й повторно #}
-{{ price|currency }}
-```
-
-Форматування ціни, сума кошика, зірочки рейтингу — усе це варто описати **один раз** як тег/фільтр і використовувати скрізь.
-
-## Структура: папка templatetags
-
-**Як це працює.** Django шукає власні теги в спеціальній папці `templatetags` **усередині app**:
+Django шукає розширення в пакеті `templatetags` усередині застосунку, який стоїть в `INSTALLED_APPS`:
 
 ```
 catalog/
 ├── __init__.py
 ├── models.py
-├── views.py
-└── templatetags/          ← саме така назва
-    ├── __init__.py        ← обов'язковий, робить папку пакетом
-    └── shop_extras.py     ← сюди пишемо теги/фільтри
+└── templatetags/
+    ├── __init__.py         ← обов'язковий, робить папку пакетом
+    └── shop_extras.py      ← модуль із тегами й фільтрами
 ```
 
-На початку файлу з тегами — **завжди** ця пара рядків:
+Модуль починається з реєстру, до якого декоратори чіпляють функції:
 
 ```python
 # catalog/templatetags/shop_extras.py
 from django import template
 
-register = template.Library()      # реєстр, до якого чіпляємо теги
+register = template.Library()
 ```
 
-`register` — це «дошка оголошень»: усе, що ти позначиш декоратором `@register....`, стане доступним у шаблоні. А в самому шаблоні файл треба **завантажити**:
-
-```html
-{% load shop_extras %}      {# ім'я файлу без .py, зверху шаблону #}
-```
-
-**Навіщо** такий ритуал. Django не тягне всі функції підряд — ти явно кажеш «завантаж набір `shop_extras`». Це передбачувано й не засмічує простір імен.
-
-## `@register.filter` — власний фільтр
-
-Фільтр перетворює **одне значення**: `{{ значення|фільтр }}`. Пиши функцію, що приймає значення й повертає результат:
-
-```python
-# catalog/templatetags/shop_extras.py
-@register.filter
-def currency(value):
-    return f'{value:,.0f} ₴'.replace(',', ' ')   # 25000 → "25 000 ₴"
-```
+У шаблоні модуль підключають за іменем файлу без `.py`:
 
 ```html
 {% load shop_extras %}
-<p>Ціна: {{ product.price|currency }}</p>       {# Ціна: 25 000 ₴ #}
 ```
 
-Фільтр може приймати й **аргумент** — `{{ значення|фільтр:аргумент }}`:
+Можна завантажити й окремі імена:
+
+```html
+{% load currency read_time from shop_extras %}
+```
+
+> <i class="bi bi-pin-angle"></i> `{% load %}` діє в межах одного файлу шаблону і **не успадковується** від `base.html` до дочірніх шаблонів. У кожному шаблоні, де використовуєш тег, потрібен свій `{% load %}`.
+
+## Фільтр
+
+Функція приймає значення ліворуч від `|` і повертає результат. Другий параметр — необов'язковий аргумент після двокрапки.
 
 ```python
-@register.filter
-def discount(price, percent):
-    return price - price * percent / 100
+from decimal import Decimal, InvalidOperation
 
-# {{ product.price|discount:10 }}  → ціна мінус 10%
+@register.filter
+def currency(value, symbol='₴'):
+    try:
+        amount = Decimal(value)
+    except (TypeError, ValueError, InvalidOperation):
+        return value                       # некоректні дані повертаємо як є
+    return f'{amount:,.0f} {symbol}'.replace(',', ' ')
 ```
 
-## `@register.simple_tag` — тег, що повертає значення
+```html
+{{ product.price|currency }}          {# 25 000 ₴ #}
+{{ product.price|currency:'$' }}      {# 25 000 $ #}
+```
 
-Коли потрібно не перетворити змінну, а **обчислити** щось (часто з кількома аргументами) — це `simple_tag`. Він повертає значення:
+Кілька важливих обмежень і опцій:
+
+- **Максимум один аргумент.** Потрібно більше — це вже `simple_tag`.
+- **Фільтр не має падати.** Виняток усередині фільтра зупинить рендер усієї сторінки, тому некоректні дані повертають без змін або порожнім рядком.
+- **Ім'я в шаблоні** за замовчуванням дорівнює імені функції; змінюється параметром: `@register.filter(name='money')`.
+- **`@stringfilter`** гарантує, що на вхід прийде рядок (Django сам зробить перетворення):
+
+```python
+from django.template.defaultfilters import stringfilter
+
+@register.filter
+@stringfilter
+def read_time(text):                       # блог
+    return f'{len(text.split()) // 200 + 1} хв читання'
+```
+
+## simple_tag
+
+Повертає обчислене значення, приймає будь-яку кількість аргументів — позиційних і іменованих.
 
 ```python
 @register.simple_tag
-def cart_total(cart):
-    return sum(item.price * item.qty for item in cart)
-
-# {% cart_total request.cart %}  → 47 300
+def discounted(price, percent=0):
+    return price - price * percent / 100
 ```
 
-Часто тегу потрібен доступ до всього контексту шаблону (де лежить `request`, `user`…). Тоді — `takes_context=True`, і **першим** аргументом функція отримує `context`:
+```html
+{% discounted product.price 15 %}
+```
+
+Результат можна покласти у змінну через `as` і використати нижче:
+
+```html
+{% discounted product.price 15 as final_price %}
+<p>Ціна зі знижкою: {{ final_price|currency }}</p>
+```
+
+**Доступ до контексту.** З `takes_context=True` першим параметром приходить контекст шаблону — там `request`, `user` та інші змінні:
 
 ```python
 @register.simple_tag(takes_context=True)
 def cart_total(context):
     cart = context['request'].session.get('cart', {})
     return sum(cart.values())
-
-# {% cart_total %}   ← request діставати не треба, він у context
 ```
-
-Результат можна й **зберегти** у змінну через `as`:
 
 ```html
-{% cart_total as total %}
-<p>Разом: {{ total|currency }}</p>
+{% cart_total %}
 ```
 
-## `@register.inclusion_tag` — тег, що рендерить фрагмент
+> <i class="bi bi-info-circle"></i> `context['request']` доступний лише тоді, коли ввімкнено context processor `django.template.context_processors.request` — у стандартному `settings.py` він уже є.
 
-Найпотужніший вид: тег **рендерить окремий шаблон-фрагмент** і вставляє його результат. Ідеально для повторюваних блоків — картка товару, меню, віджет.
+**Блочний варіант.** З Django 5.2 є `@register.simple_block_tag` — тег із вмістом між відкривальним і закривальним тегами. Функція отримує цей вміст першим аргументом:
+
+```python
+from django.utils.html import format_html
+
+@register.simple_block_tag
+def note(content, level='info'):
+    return format_html('<div class="note note-{}">{}</div>', level, content)
+```
+
+```html
+{% note level="warning" %}Товар закінчується{% endnote %}
+```
+
+## inclusion_tag
+
+Функція повертає **словник**, який стає контекстом окремого шаблону-фрагмента; результат рендера вставляється на місце виклику.
 
 ```python
 @register.inclusion_tag('catalog/tags/product_card.html')
-def product_card(product):
-    return {'product': product}       # це context для фрагмента
+def product_card(product, show_price=True):
+    return {'product': product, 'show_price': show_price}
 ```
-
-Фрагмент `catalog/tags/product_card.html`:
 
 ```html
-<div class="card">
+{# catalog/templates/catalog/tags/product_card.html #}
+<article class="card">
   <h3>{{ product.name }}</h3>
-  <p>{{ product.price|currency }}</p>
-</div>
+  {% if show_price %}<p>{{ product.price }}</p>{% endif %}
+</article>
 ```
-
-Виклик у будь-якому шаблоні:
 
 ```html
 {% load shop_extras %}
 {% for p in products %}
-    {% product_card p %}          {# рендерить картку для кожного #}
+  {% product_card p %}
 {% endfor %}
 ```
 
-**Навіщо.** Один опис картки — використання скрізь. Зміниш `product_card.html` — оновляться всі картки на сайті.
+`takes_context=True` працює так само, як у `simple_tag`: контекст приходить першим параметром.
 
-## Різні домени — той самий механізм
+> <i class="bi bi-exclamation-triangle"></i> Не роби запитів до бази всередині `inclusion_tag`, який викликається в циклі: сто карток дадуть сто запитів. Дані готуй у view (з `select_related` / `prefetch_related`) і передавай у тег готовими.
 
-**Блог** — час читання посту (фільтр):
+## Екранування та HTML у відповіді
 
-```python
-@register.filter
-def read_time(text):
-    return f'{len(text.split()) // 200 + 1} хв читання'
+Django автоматично екранує вивід — і фільтрів, і `simple_tag`. Якщо функція повертає розмітку, її треба позначити безпечною, інакше теги приїдуть у сторінку як текст `&lt;span&gt;`.
 
-# {{ post.body|read_time }}
-```
-
-**Рейтинг фільму** — зірочки (inclusion_tag):
+Правильний спосіб — `format_html()`: він екранує підставлені значення, але лишає твої теги розміткою.
 
 ```python
-@register.inclusion_tag('reviews/tags/stars.html')
-def stars(rating):
-    return {'full': range(rating), 'empty': range(5 - rating)}
+from django.utils.html import format_html
+
+@register.simple_tag
+def stars(rating):                                   # кінотека
+    full, empty = int(rating), 5 - int(rating)
+    return format_html('<span class="stars">{}{}</span>', '★' * full, '☆' * empty)
 ```
 
-```html
-{# reviews/tags/stars.html #}
-{% for _ in full %}★{% endfor %}{% for _ in empty %}☆{% endfor %}
+`mark_safe()` теж робить рядок безпечним, але **нічого не екранує** — застосовувати його можна лише до розмітки, у якій немає даних від користувача.
+
+Для фільтрів є ще параметр `is_safe`:
+
+```python
+@register.filter(is_safe=True)
+def initials(value):                       # "Марія Коваль" → "МК"
+    return ''.join(part[0].upper() for part in str(value).split()[:2])
 ```
 
-```html
-{% load review_extras %}
-{% stars movie.rating %}      {# ★★★★☆ #}
-```
-
-Один інструмент — три домени: магазин, блог, кіно.
+`is_safe=True` означає «цей фільтр не додає у рядок небезпечних символів» — тоді Django не екранує результат повторно, якщо вхід уже був безпечним. Це не дозвіл повертати довільний HTML.
 
 ## Типові помилки / Нюанси
 
-> <i class="bi bi-exclamation-triangle"></i> **Немає `__init__.py`** у папці `templatetags/` → Django не бачить її як пакет, і `{% load %}` падає з `... is not a registered tag library`. Порожній `__init__.py` **обов'язковий**.
-
-> <i class="bi bi-exclamation-triangle"></i> **Перезапусти сервер** після створення папки `templatetags`. `runserver` **не** підхоплює нові пакети з тегами на льоту — теги «не знайдуться», доки не перезапустиш. Це найчастіша причина «я ж усе написала, а `{% load %}` не працює».
-
-> <i class="bi bi-exclamation-triangle"></i> **Забула `register = template.Library()`** або декоратор `@register...` → тег не зареєстрований, шаблон його «не бачить». Ці два рядки на початку файлу — фундамент.
-
-> <i class="bi bi-info-circle"></i> `{% load shop_extras %}` пиши на початку **кожного** шаблону, де використовуєш ці теги. Завантаження не успадковується від `base.html` до дочірніх шаблонів.
-
-> <i class="bi bi-lightbulb"></i> Як обрати вид: **фільтр** — коли перетворюєш одне значення (`{{ x|currency }}`); **simple_tag** — коли обчислюєш результат із кількох аргументів (`{% cart_total %}`); **inclusion_tag** — коли треба відрендерити цілий шматок HTML (картка, меню).
-
-> <i class="bi bi-pin-angle"></i> Ім'я файлу (`shop_extras`) — це те, що пишеш у `{% load %}`. Назви його осмислено (`blog_extras`, `review_extras`), бо саме воно «світиться» в кожному шаблоні.
+| Що не так | Наслідок і як правильно |
+|---|---|
+| Немає `__init__.py` у `templatetags/` | Папка не є пакетом, `{% load %}` падає з `'shop_extras' is not a registered tag library`. Додай порожній файл |
+| Сервер не перезапущено | `runserver` не підхоплює новий пакет із тегами на льоту — після створення папки перезапусти вручну |
+| Застосунок не в `INSTALLED_APPS` | Бібліотека тегів не знайдеться, навіть якщо файли на місці |
+| Забуто `register = template.Library()` або декоратор | Функція існує, але шаблон її не бачить |
+| Ім'я збігається з вбудованим (`date`, `length`, `add`) | Твій тег перекриє стандартний у всіх шаблонах, де стоїть `{% load %}`. Давай відмінні назви |
+| Теги лежать поза застосунком | Django їх не знайде; або переклади в застосунок, або зареєструй через `TEMPLATES['OPTIONS']['libraries']` |
 
 ## Підсумок
 
-- **Власні теги/фільтри** розширюють мову шаблонів, коли вбудованих замало (форматування ціни, сума кошика, зірочки).
-- **Структура:** папка `app/templatetags/` з `__init__.py` і файлом (напр. `shop_extras.py`); на початку — `register = template.Library()`; у шаблоні — `{% load shop_extras %}`.
-- **`@register.filter`** — перетворює одне значення: `{{ price|currency }}`.
-- **`@register.simple_tag`** — повертає обчислене значення: `{% cart_total %}`; `takes_context=True` дає доступ до `request`/`user`.
-- **`@register.inclusion_tag('...')`** — рендерить фрагмент-шаблон (картка товару, зірочки, меню).
-- **Нюанси:** обов'язковий `__init__.py`, **перезапуск сервера** після створення папки `templatetags`, `{% load %}` у кожному шаблоні.
+- Розширення шаблонної мови живуть у `app/templatetags/*.py`; потрібні `__init__.py`, `register = template.Library()`, застосунок в `INSTALLED_APPS` і `{% load %}` у кожному шаблоні.
+- **Фільтр** — одне значення плюс максимум один аргумент, без доступу до контексту; не повинен піднімати винятків.
+- **`simple_tag`** — довільна кількість аргументів, результат можна зберегти через `as`; `takes_context=True` дає `request` і `user`. Блочна форма — `simple_block_tag` (Django 5.2+).
+- **`inclusion_tag`** — повертає словник-контекст для окремого шаблону-фрагмента; запити до бази тримай поза ним.
+- Вивід автоматично екранується: для розмітки використовуй `format_html()`, `mark_safe()` — лише для рядків без даних користувача, `is_safe=True` — позначка, що фільтр не додає небезпечних символів.
+- Після створення пакета `templatetags` сервер треба перезапустити.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/howto/custom-template-tags/" target="_blank" rel="noopener">Custom template tags and filters <i class="bi bi-box-arrow-up-right"></i></a></div></div>

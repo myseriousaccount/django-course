@@ -1,156 +1,224 @@
-# Анатомія app: які файли і навіщо
+# Файли застосунку
 
-Коли ти робиш `startapp`, Django створює папку з готовим набором файлів. Цей урок розбирає **кожен** із них — за що відповідає, коли ти його редагуєш і що в нього кладеш. Структуру беремо як у shop-app, а приклади моделей/логіки навмисно з різних доменів (блог, бібліотека, магазин, користувачі), щоб набір файлів читався як універсальний.
+`startapp` створює фіксований набір файлів, і кожен має чітку роль. Урок розбирає, що в них кладуть, які файли додають вручну і які редагувати не можна.
 
-## Карта файлів модуля
+## Що створюється й що додають самостійно
 
 ```
 blog/
-├── __init__.py     ← робить папку пакетом (порожній)
-├── apps.py         ← конфіг самого app
-├── models.py       ← опис даних і таблиць БД
-├── views.py        ← логіка: обробка запитів
-├── admin.py        ← реєстрація моделей в адмінці
-├── tests.py        ← тести
-├── migrations/     ← історія змін схеми БД
+├── __init__.py     # робить папку пакетом
+├── apps.py         # конфігурація застосунку
+├── models.py       # опис даних і таблиць
+├── views.py        # обробники запитів
+├── admin.py        # реєстрація моделей в адмін-панелі
+├── tests.py        # тести
+├── migrations/     # згенерована історія змін схеми
 │   └── __init__.py
-└── urls.py         ← маршрути модуля (ДОДАЄШ САМА)
+├── urls.py         # ← додаєш сама: маршрути застосунку
+├── forms.py        # ← додаєш сама: форми
+├── templates/blog/ # ← додаєш сама: шаблони
+└── static/blog/    # ← додаєш сама: CSS, JS, зображення
 ```
 
-Далі — кожен файл окремо, у порядку від найважливіших до тих, що чіпаєш рідко.
+| Файл | За що відповідає | Чи редагуєш |
+|---|---|---|
+| `models.py` | структура даних, таблиці бази | постійно |
+| `views.py` | обробка запитів | постійно |
+| `urls.py` | маршрути застосунку | постійно, створюєш сама |
+| `forms.py` | форми й правила валідації | часто, створюєш сама |
+| `admin.py` | вигляд моделей в адмін-панелі | часто |
+| `apps.py` | конфігурація застосунку | рідко |
+| `migrations/` | історія змін схеми | не редагуєш, але комітиш |
+| `tests.py` | тести | за потреби |
+| `__init__.py` | робить папку пакетом | ні |
 
-## __init__.py — робить папку пакетом
+## models.py
 
-Порожній файл. Його роль — зробити папку app **Python-пакетом**, щоб працювали імпорти `from blog import views`, `from .models import Post`. Не редагуєш.
-
-## models.py — дані
-
-> **models.py** — тут описуєш, які дані зберігає модуль, у вигляді Python-класів. Кожен клас = таблиця в БД, кожен атрибут = колонка. Це шар **M** у MTV.
-
-Той самий механізм, різні домени:
+Класи описують таблиці: клас — таблиця, атрибут — стовпець.
 
 ```python
 # blog/models.py
 from django.db import models
 
+
 class Post(models.Model):
     title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True)          # для гарних URL
+    slug = models.SlugField(unique=True)
     body = models.TextField()
-    published = models.DateTimeField(auto_now_add=True)
+    published_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
 ```
+
+Після кожної зміни цього файлу потрібні `makemigrations` (описати зміну) і `migrate` (застосувати до бази). Детально — в уроці «Створення моделі».
+
+## views.py
+
+Обробник приймає `request` і повертає відповідь.
 
 ```python
-# library/models.py — інша тема, той самий підхід
-from django.db import models
+# blog/views.py
+from django.shortcuts import get_object_or_404, render
 
-class Book(models.Model):
-    title = models.CharField(max_length=200)
-    author = models.CharField(max_length=120)
-    year = models.PositiveIntegerField()
-    available = models.BooleanField(default=True)
+from .models import Post
+
+
+def post_list(request):
+    posts = Post.objects.filter(is_published=True)
+    return render(request, 'blog/post_list.html', {'posts': posts})
+
+
+def post_detail(request, slug):
+    post = get_object_or_404(Post, slug=slug)
+    return render(request, 'blog/post_detail.html', {'post': post})
 ```
 
-> <i class="bi bi-info-circle"></i> Це Django ORM — аналог SQLAlchemy-моделей з Flask. Тільки тут ORM вбудований, окрему бібліотеку ставити не треба. У свіжому app `models.py` спершу порожній (`# Create your models here.`) — його наповнюють пізніше.
+## urls.py
 
-Після будь-яких змін у `models.py` запускаєш `makemigrations` (створити «інструкцію») + `migrate` (застосувати до БД). Детально — в уроці про моделі.
-
-## views.py — логіка
-
-> **views.py** — тут «обробники»: функція приймає запит (`request`) і повертає відповідь. Це шар **V** у MTV.
-
-```python
-# library/views.py
-from django.shortcuts import render, get_object_or_404
-from .models import Book
-
-def book_list(request):
-    books = Book.objects.all()
-    return render(request, 'library/book_list.html', {'books': books})
-
-def book_detail(request, book_id):
-    book = get_object_or_404(Book, pk=book_id)
-    return render(request, 'library/book_detail.html', {'book': book})
-```
-
-Кожна view відповідає за одну дію/сторінку. Детально — в окремому уроці «Views».
-
-## urls.py — маршрути модуля
-
-> **urls.py** — цей файл **ти створюєш сама** (`startapp` його не робить). Він каже, який URL веде до якої view в межах модуля.
+Файл створюють вручну й підключають у головній таблиці маршрутів.
 
 ```python
 # blog/urls.py
 from django.urls import path
+
 from . import views
 
+app_name = 'blog'
+
 urlpatterns = [
-    path('', views.post_list, name='post_list'),
-    path('<slug:post_slug>/', views.post_detail, name='post_detail'),
+    path('', views.post_list, name='list'),
+    path('<slug:slug>/', views.post_detail, name='detail'),
 ]
 ```
 
-> <i class="bi bi-lightbulb"></i> Логіка зв'язку: головний `root/urls.py` через `include('blog.urls')` передає сюди керування, а вже цей файл вирішує, яку саме view викликати. Детально — в уроці «URL-маршрути».
-
-## admin.py — підключення до адмінки
-
-> **admin.py** — Django має готову адмін-панель, але щоб вона показувала твою модель — її треба **зареєструвати** тут.
-
 ```python
-# library/admin.py
-from django.contrib import admin
-from .models import Book
+# config/urls.py
+from django.urls import include, path
 
-admin.site.register(Book)
+urlpatterns = [
+    path('blog/', include('blog.urls')),
+]
 ```
 
-**Навіщо.** Після цього на `/admin` з'явиться розділ для керування книгами — без жодного HTML. Можна додавати, редагувати, шукати, видаляти записи. Це одна з найсильніших «батарейок» Django. За бажанням тут же налаштовують, які колонки показувати й за чим фільтрувати (`ModelAdmin`).
+`app_name` задає простір імен, тож посилання пишуться як `{% url 'blog:detail' post.slug %}` і не конфліктують з однойменними маршрутами інших застосунків.
 
-## apps.py — конфіг модуля
+## forms.py
 
-Невеликий клас із налаштуваннями самого app. Django генерує його автоматично, зазвичай не чіпаєш:
+Окремий файл для форм — конвенція, а не вимога фреймворку, але саме його очікують знайти в чужому проєкті.
+
+```python
+# blog/forms.py
+from django import forms
+
+from .models import Post
+
+
+class PostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['title', 'slug', 'body']
+```
+
+## admin.py
+
+Модель з'являється в адмін-панелі лише після реєстрації.
+
+```python
+# blog/admin.py
+from django.contrib import admin
+
+from .models import Post
+
+
+@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('title', 'published_at')
+    search_fields = ('title',)
+```
+
+Декоратор `@admin.register(Post)` і виклик `admin.site.register(Post, PostAdmin)` рівнозначні; перший компактніший і частіше зустрічається в сучасному коді.
+
+## apps.py
+
+Конфігурація застосунку. Найчастіше її не чіпають, але саме тут підключають сигнали — код, який має виконатися при старті:
 
 ```python
 # blog/apps.py
 from django.apps import AppConfig
 
+
 class BlogConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'blog'
+
+    def ready(self):
+        from . import signals            # noqa: F401
 ```
 
-**Навіщо взагалі існує.** Це «паспорт» модуля: його ім'я і базові налаштування. Іноді сюди дописують метод `ready()` — код, що має виконатися при старті app (напр. підключення сигналів). Але на старті просто залишаєш як є.
+Імпорт усередині `ready()`, а не на рівні модуля — вимога Django: на момент завантаження `apps.py` реєстр моделей ще не готовий.
 
-## migrations/ — історія змін БД
+## migrations/
 
-> **migrations/** — папка, куди `makemigrations` складає файли-«інструкції» зміни схеми БД. Кожен файл описує, що додати/змінити в таблицях (нова модель, нове поле тощо).
+Файли створює `makemigrations`, застосовує `migrate`. Вони пронумеровані й посилаються один на одного, утворюючи послідовність станів схеми.
 
-**Як це працює.** Ти міняєш `models.py` → `makemigrations` створює тут пронумерований файл (`0001_initial.py`, `0002_...`) → `migrate` застосовує його до бази. Так база завжди відповідає моделям, а історія змін зберігається.
+```
+blog/migrations/
+├── 0001_initial.py
+├── 0002_post_slug.py
+└── __init__.py
+```
 
-> <i class="bi bi-exclamation-triangle"></i> Ці файли **не редагують руками** — вони генеруються. Але їх **комітять у git**, щоб уся команда мала однакову структуру БД.
+> <i class="bi bi-exclamation-triangle"></i> Міграції комітять у git разом із моделями: саме вони відтворюють схему бази на іншій машині й на сервері. Видалення застосованої міграції або її ручне редагування ламає цю послідовність.
 
-## tests.py — тести
+## tests.py
 
-Місце для автотестів модуля (перевірити, що view повертає 200, що модель рахує правильно тощо). Запускаються через `python manage.py test`. На старті порожній — заповнюєш за потреби.
+```python
+# blog/tests.py
+from django.test import TestCase
 
-## Хто що робить — підсумкова таблиця
+from .models import Post
 
-| Файл | Відповідає за | Чи редагуєш |
-|---|---|---|
-| `models.py` | дані / таблиці БД | так |
-| `views.py` | логіку обробки запитів | так |
-| `urls.py` | маршрути модуля | так (сама створюєш) |
-| `admin.py` | показ моделей в адмінці | часто |
-| `apps.py` | конфіг app | рідко |
-| `migrations/` | історію змін схеми | ні (генерується, комітиться) |
-| `tests.py` | тести | за бажанням |
-| `__init__.py` | робить пакетом | ні (порожній) |
+
+class PostModelTests(TestCase):
+    def test_str_returns_title(self):
+        post = Post.objects.create(title='Заголовок', slug='zagolovok', body='…')
+        self.assertEqual(str(post), 'Заголовок')
+```
+
+Коли тестів стає багато, файл замінюють пакетом `tests/` із кількома модулями. Запуск — `python manage.py test`.
+
+## Інші файли, які з'являються з ростом застосунку
+
+| Шлях | Для чого |
+|---|---|
+| `templatetags/` | власні теги й фільтри шаблонів |
+| `signals.py` | обробники сигналів моделей (`post_save` тощо) |
+| `managers.py` | власні менеджери й QuerySet-и |
+| `services.py` | логіка, що працює з кількома моделями |
+| `management/commands/` | власні команди `manage.py` |
+| `context_processors.py` | змінні, доступні в усіх шаблонах |
+
+Жодна з цих назв не є вимогою Django (крім `templatetags/` і `management/commands/`) — це усталені імена, за якими код швидко знаходять.
+
+## Типові помилки / Нюанси
+
+| Що не так | Наслідок і як правильно |
+|---|---|
+| Чекати `urls.py` одразу після `startapp` | Файл не створюється: додай його вручну і підключи через `include()` |
+| Шаблони в `blog/templates/post_list.html` без підпапки | При збігу імен Django може взяти шаблон іншого застосунку. Правильний шлях — `blog/templates/blog/post_list.html` |
+| Уся логіка у `views.py` | Файл розростається до сотень рядків; обчислення й правила виносять у методи моделі, менеджери або `services.py` |
+| Ручне редагування файлів у `migrations/` | Історія схеми розходиться між копіями проєкту; зміну оформлюють новою міграцією |
+| Імпорт сигналів на рівні модуля `apps.py` | Помилка `AppRegistryNotReady` при старті: імпорт має бути всередині `ready()` |
+| `migrations/` у `.gitignore` | На іншій машині схему бази неможливо відтворити; ці файли версіонують |
 
 ## Підсумок
 
-- App складається з фіксованого набору файлів, кожен — зі своєю роллю; набір однаковий для будь-якої теми (блог, бібліотека, магазин).
-- Найчастіше працюєш з `models.py` (дані), `views.py` (логіка), `urls.py` (маршрути — створюєш сама).
-- `admin.py` підключає модель до готової адмінки; `migrations/` — авто-історія змін БД (руками не чіпаєш, але комітиш).
-- `apps.py` — «паспорт» app; `tests.py`, `__init__.py` — зазвичай залишаєш як є.
+- `startapp` створює `models.py`, `views.py`, `admin.py`, `apps.py`, `tests.py` і `migrations/`; `urls.py`, `forms.py`, `templates/`, `static/` додають вручну.
+- Основна робота йде в `models.py`, `views.py`, `urls.py` і `forms.py`; `admin.py` вмикає модель в адмін-панель.
+- `app_name` в `urls.py` дає простір імен і рятує від конфліктів однакових імен маршрутів.
+- `apps.py` потрібен, коли треба виконати код при старті — наприклад, підключити сигнали в `ready()`.
+- Файли міграцій генеруються автоматично, не редагуються руками й обов'язково версіонуються.
+- З ростом застосунку з'являються `templatetags/`, `signals.py`, `managers.py`, `services.py`, `management/commands/` — усталені імена, за якими код легко знайти.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/ref/applications/" target="_blank" rel="noopener">Applications <i class="bi bi-box-arrow-up-right"></i></a></div></div>

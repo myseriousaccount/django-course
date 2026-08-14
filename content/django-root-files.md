@@ -1,69 +1,61 @@
-# Папка root/: settings, urls, wsgi/asgi
+# Головні файли проєкту
 
-Це внутрішня папка-пакет проєкту (у shop-app вона зветься `root/`, тому шлях виходить `root/root/`). Тут живе «мозок» проєкту — глобальні налаштування і головний роутер. На відміну від apps (кожен відповідає за свою тему), ця папка керує **всім** проєктом одразу. Розберемо кожен файл і кожне ключове налаштування.
+Пакет проєкту — це папка з налаштуваннями, яку створив `startproject` (у прикладах нижче вона зветься `config`). На відміну від застосунків, що відповідають кожен за свою область, ці файли керують проєктом цілком: конфігурацією, маршрутизацією та точками входу для сервера.
 
-## __init__.py
+## settings.py
 
-> **`__init__.py`** — порожній файл, єдина роль якого — зробити папку `root/` **Python-пакетом**, щоб можна було писати `root.settings`, `root.urls`, `root.wsgi`.
+Звичайний Python-модуль, у якому кожне налаштування — змінна верхнього рівня у верхньому регістрі. Django читає його один раз при старті.
 
-Точно так само, як у Flask порожній `__init__.py` робив `app/` пакетом. Не чіпаємо.
-
-## settings.py — налаштування всього проєкту
-
-> **settings.py** — найважливіший файл проєкту: звичайний Python-модуль, де кожне налаштування — це змінна на верхньому рівні (у ВЕЛИКИХ літерах за конвенцією). Тут зібрано все: безпека, список apps, шаблони, база, статика, мова й час.
-
-Пройдемось по всіх ключових блоках. Порядок — приблизно такий, як їх генерує сам Django.
-
-### BASE_DIR — корінь проєкту
+### BASE_DIR
 
 ```python
+# config/settings.py
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ```
 
-Коренева папка, від якої будуються всі інші шляхи (до бази, шаблонів, статики). `Path(__file__)` — це сам `settings.py`; два `.parent` піднімають на два рівні вгору — до кореня проєкту. Далі шляхи зручно збирати через `/`: `BASE_DIR / 'templates'`.
+Корінь проєкту, від якого будуються решта шляхів: `BASE_DIR / 'templates'`, `BASE_DIR / 'db.sqlite3'`. Два виклики `.parent` піднімають на два рівні: від файла `settings.py` до папки `config`, далі до кореня.
 
-### SECRET_KEY, DEBUG, ALLOWED_HOSTS — безпека і режим
+### SECRET_KEY, DEBUG, ALLOWED_HOSTS
 
 ```python
-SECRET_KEY = 'django-insecure-...'   # підпис сесій, токенів, cookies
-DEBUG = True                         # детальні сторінки помилок
-ALLOWED_HOSTS = []                   # домени, з яких приймати запити
+# config/settings.py
+SECRET_KEY = 'django-insecure-...'
+DEBUG = True
+ALLOWED_HOSTS = []
 ```
 
-- **`SECRET_KEY`** — унікальний ключ, яким Django підписує сесії, CSRF-токени, посилання на скидання пароля. Якщо він витече — зловмисник зможе підробити ці підписи.
-- **`DEBUG`** — режим розробки. При `True` Django на помилці показує повний traceback зі змінними. Зручно тобі, але **небезпечно** для чужих очей.
-- **`ALLOWED_HOSTS`** — білий список доменів. При `DEBUG = False` він **обов'язковий**: Django відкидає запити з доменів не зі списку.
+| Налаштування | Що робить |
+|---|---|
+| `SECRET_KEY` | ключ, яким підписуються сесії, CSRF-токени й посилання на скидання пароля |
+| `DEBUG` | режим розробки: детальні сторінки помилок зі значеннями змінних |
+| `ALLOWED_HOSTS` | домени, з яких приймаються запити; при `DEBUG = False` список обов'язковий |
 
-> <i class="bi bi-exclamation-triangle"></i> `DEBUG = True` показує повний traceback і фрагменти коду — на бойовому сервері це витік даних. На проді завжди `DEBUG = False`, а `ALLOWED_HOSTS` — з реальними доменами (`['maydanchyk.ua']`).
+> <i class="bi bi-exclamation-triangle"></i> `DEBUG = True` на бойовому сервері показує трасування, фрагменти коду й частину налаштувань будь-якому відвідувачу сторінки з помилкою. Витік `SECRET_KEY` дозволяє підробити сесію будь-якого користувача. Обидва значення на продакшні беруть із середовища — про це в уроці «dev vs prod і секрети».
 
-### INSTALLED_APPS — перелік модулів
+### INSTALLED_APPS
 
 ```python
+# config/settings.py
 INSTALLED_APPS = [
-    'django.contrib.admin',      # адмін-панель
-    'django.contrib.auth',       # користувачі, права, групи
+    'django.contrib.admin',
+    'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',   # сесії
-    'django.contrib.messages',   # flash-повідомлення
-    'django.contrib.staticfiles',# роздача CSS/JS
-    # ↑ «батарейки» Django ↓ твої модулі
-    'home',
-    'catalog',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'blog',
     'accounts',
-    'carts',
-    'orders',
 ]
 ```
 
-Перелік **усіх** модулів — і вбудованих (`django.contrib.*`), і твоїх власних. Django обходить цей список, щоб знайти моделі, шаблони, теги, команди.
+Django обходить цей список, коли шукає моделі, міграції, шаблони, статику, теги й команди. Застосунок, якого тут немає, для фреймворку не існує.
 
-> <i class="bi bi-exclamation-triangle"></i> **Найпоширеніша помилка новачка.** Створила app через `startapp`, написала моделі — а `makemigrations` каже «no changes». Причина майже завжди: app не додано в `INSTALLED_APPS`, тож Django його просто не бачить.
-
-### MIDDLEWARE — ланцюжок прошарків
+### MIDDLEWARE
 
 ```python
+# config/settings.py
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -75,27 +67,20 @@ MIDDLEWARE = [
 ]
 ```
 
-> **Middleware** — це «прошарки», через які проходить **кожен** запит по дорозі до view і кожна відповідь на зворотному шляху.
+Обробники, через які проходить кожен запит на шляху до view і кожна відповідь назад. Порядок значущий: `AuthenticationMiddleware` заповнює `request.user` і тому мусить стояти після `SessionMiddleware`, з якого бере сесію. Детально — в уроці «Цикл запиту й middleware».
 
-Порядок важливий: запит іде згори вниз, відповідь — знизу вгору. Саме звідси береться `request.user` (це робить `AuthenticationMiddleware`) і захист CSRF. Django заповнює цей список сам — руками чіпаєш рідко (хіба додати сторонній прошарок, напр. для мови чи кешу).
-
-### ROOT_URLCONF — де головний роутер
+### ROOT_URLCONF і TEMPLATES
 
 ```python
-ROOT_URLCONF = 'root.urls'   # головні маршрути шукати в root/urls.py
-```
+# config/settings.py
+ROOT_URLCONF = 'config.urls'
 
-Django, отримавши запит, дивиться саме сюди, щоб дізнатися, з якого файлу починати розбір адрес.
-
-### TEMPLATES — звідки брати HTML
-
-```python
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
-    'DIRS': [BASE_DIR / 'templates'],  # спільна папка шаблонів проєкту
-    'APP_DIRS': True,                  # + шукати templates/ всередині кожного app
+    'DIRS': [BASE_DIR / 'templates'],
+    'APP_DIRS': True,
     'OPTIONS': {
-        'context_processors': [        # що додавати в КОЖЕН шаблон автоматично
+        'context_processors': [
             'django.template.context_processors.request',
             'django.contrib.auth.context_processors.auth',
             'django.contrib.messages.context_processors.messages',
@@ -104,13 +89,15 @@ TEMPLATES = [{
 }]
 ```
 
-- **`DIRS`** — де лежать спільні шаблони (base.html, головна).
-- **`APP_DIRS: True`** — крім того, шукати папку `templates/` **всередині кожного app**. Саме тому працює `render(request, 'blog/post.html')`.
-- **`context_processors`** — функції, що додають змінні в **кожен** шаблон (напр. `user`, `messages`), щоб не передавати їх щоразу вручну.
+- `ROOT_URLCONF` — з якого модуля починається розбір адрес.
+- `DIRS` — спільні шаблони проєкту.
+- `APP_DIRS: True` — додатково шукати `templates/` усередині кожного застосунку.
+- `context_processors` — функції, що додають змінні в кожен шаблон: саме звідси в шаблонах беруться `user` і `messages`.
 
-### DATABASES — підключення до бази
+### DATABASES
 
 ```python
+# config/settings.py
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -119,119 +106,144 @@ DATABASES = {
 }
 ```
 
-У shop-app — SQLite: уся база в одному файлі `db.sqlite3`. Зручно для навчання, нічого не треба ставити.
-
-**Як це виглядає для PostgreSQL.** SQLite — це файл, тож йому досить шляху. PostgreSQL — окремий **сервер**, тому до нього треба «під'єднатися»: вказати користувача, пароль і адресу.
+SQLite зберігає всю базу в одному файлі й не потребує встановлення — тому він стоїть за замовчуванням. PostgreSQL — окремий сервер, тож підключення описує не шлях, а параметри з'єднання:
 
 ```python
+# config/settings.py
+import os
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),        # назва бази, а не файл
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'NAME': os.environ['DB_NAME'],          # назва бази, а не файл
+        'USER': os.environ['DB_USER'],
+        'PASSWORD': os.environ['DB_PASSWORD'],
         'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 ```
 
-Що змінюється проти SQLite: `ENGINE` → `...postgresql`; `NAME` — тепер **назва бази**, а не шлях до файлу; додаються `USER`, `PASSWORD`, `HOST`, `PORT`.
+Для PostgreSQL потрібен драйвер: `pip install "psycopg[binary]"`. Пароль тримають у змінних середовища, а не в коді, який потрапляє в git.
 
-> <i class="bi bi-exclamation-triangle"></i> Пароль від бази — секрет, тому його читають з env-змінних (`os.environ.get(...)`), а не пишуть прямо в коді (див. урок «Settings: dev проти prod і секрети»).
+> <i class="bi bi-info-circle"></i> SQLite не підходить для продакшну з паралельними записами: він блокує файл цілком і на конкурентних запитах видає `database is locked`. Для навчального проєкту цього обмеження не видно, для бойового — переходять на PostgreSQL.
 
-> <i class="bi bi-info-circle"></i> Django не говорить із PostgreSQL без драйвера — його треба поставити: `pip install "psycopg[binary]"` (для Django 6.0).
-
-### AUTH_PASSWORD_VALIDATORS — правила паролів
+### Паролі, мова, час
 
 ```python
+# config/settings.py
 AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    # ...
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
+
+LANGUAGE_CODE = 'uk'
+TIME_ZONE = 'Europe/Kyiv'
+USE_I18N = True
+USE_TZ = True
 ```
 
-Набір перевірок для паролів при реєстрації: мінімальна довжина, заборона надто поширених паролів тощо. Спрацьовують автоматично у формах реєстрації/зміни пароля.
+`AUTH_PASSWORD_VALIDATORS` застосовуються формами автентифікації й функцією `validate_password()`, але не спрацьовують при прямому `create_user()`. `USE_TZ = True` означає, що в базі час зберігається в UTC, а перетворюється при виведенні — тому в коді використовують `timezone.now()`, а не `datetime.now()`.
 
-### Мова, час, статика і медіа
+### Статика й медіа
 
 ```python
-LANGUAGE_CODE = 'uk'                 # мова інтерфейсу (напр. української адмінки)
-TIME_ZONE = 'Europe/Kyiv'            # часовий пояс
-USE_I18N = True                      # увімкнути переклади
-USE_TZ = True                        # зберігати час у базі в UTC
+# config/settings.py
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']     # вихідні файли проєкту
+STATIC_ROOT = BASE_DIR / 'staticfiles'       # куди collectstatic збере все для сервера
 
-STATIC_URL = 'static/'               # префікс URL для CSS/JS
-STATICFILES_DIRS = [BASE_DIR / 'static']  # де лежать ТВОЇ CSS/JS у розробці
-STATIC_ROOT = BASE_DIR / 'staticfiles'    # куди collectstatic збере все для прода
-
-MEDIA_URL = 'media/'                 # префікс URL для завантажених файлів
-MEDIA_ROOT = BASE_DIR / 'media'      # куди складати аватарки, фото товарів тощо
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'              # файли, завантажені користувачами
 ```
 
-- **`STATICFILES_DIRS`** — твої вихідні статичні файли; **`STATIC_ROOT`** — куди команда `collectstatic` збирає їх усі в одну папку для бойового сервера.
-- **`MEDIA_*`** — окремо для файлів, які завантажують **користувачі** (не плутай зі статикою розробника).
+Статика — файли, які пишеш ти (CSS, JS, іконки). Медіа — те, що завантажують користувачі (фото товарів, аватари). Їх розділяють, бо перші версіонуються разом із кодом, а другі — ні.
 
-### DEFAULT_AUTO_FIELD — тип первинного ключа
+### DEFAULT_AUTO_FIELD
 
 ```python
+# config/settings.py
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ```
 
-Який тип поля Django ставить для автоматичного `id` у моделях. `BigAutoField` — велике ціле, вистачає надовго. Задається один раз, більше не думаєш.
+Тип поля `id`, яке Django додає моделям автоматично. `BigAutoField` — 64-бітне ціле; зміна цього значення в наявному проєкті потребує міграцій усіх таблиць.
 
-## urls.py — головний роутер
+## urls.py
 
-> **urls.py** — вхідна точка для всіх маршрутів проєкту. Django, отримавши запит, дивиться спершу сюди (бо `ROOT_URLCONF = 'root.urls'`).
-
-Ось `root/urls.py` shop-app:
+Точка входу для маршрутизації. Головна таблиця не описує всі адреси сама, а делегує їх застосункам:
 
 ```python
+# config/urls.py
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('home.urls')),
+    path('blog/', include('blog.urls')),
     path('accounts/', include('accounts.urls')),
-    path('carts/', include('carts.urls')),
-    path('catalog/', include('catalog.urls')),
-    path('orders/', include('orders.urls')),
 ]
 ```
 
-**Як це працює.** Ключова ідея — головний роутер **не описує всі маршрути сам**, а **делегує** їх модулям через `include()`. Наприклад, усе, що починається з `catalog/`, передається в `catalog/urls.py`. Це і є модульність. Детально — у наступному розділі про URL.
+У режимі розробки сюди ж додають роздачу медіафайлів — на продакшні цим займається вебсервер:
 
-## wsgi.py і asgi.py — точки входу для деплою
+```python
+# config/urls.py
+from django.conf import settings
+from django.conf.urls.static import static
 
-**Навіщо.** Ці два файли потрібні, коли проєкт виходить на **справжній** сервер (не `runserver`).
-
-- **wsgi.py** — класична, синхронна точка входу. Бойовий сервер (наприклад Gunicorn) бере `root.wsgi.application` і через нього спілкується з твоїм Django.
-- **asgi.py** — асинхронна версія (для WebSocket, довгих з'єднань, async-view).
-
-> <i class="bi bi-info-circle"></i> У розробці ти їх не чіпаєш — `runserver` працює без них. Вони «оживають» тільки на деплої. Просто знай: `wsgi.py` — це двері, через які бойовий сервер заходить у твій додаток.
-
-## manage.py — пульт керування (для порівняння)
-
-`manage.py` лежить **не** в `root/`, а на рівень вище, поруч із папкою проєкту. Це твій «пульт»: саме через нього ти запускаєш усі команди (`runserver`, `startapp`, `makemigrations`, `migrate`). Він читає `root/settings.py` і виконує потрібну дію. Тобто зв'язок такий: ти → `manage.py` → `settings.py`.
-
-## Як файли пов'язані між собою
-
-```
-запит → wsgi.py (на проді) → settings.py (конфіг) → root/urls.py (роутер)
-                                                          │
-                                          include() → app/urls.py → view
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 ```
 
-Усе тримається на `settings.py`: він каже, де роутер (`ROOT_URLCONF`), які apps увімкнені (`INSTALLED_APPS`), де шаблони, база, статика і мова.
+## wsgi.py і asgi.py
+
+Точки входу для бойового сервера. `wsgi.py` — синхронний інтерфейс, з ним працюють Gunicorn і uWSGI. `asgi.py` — асинхронний, потрібен для WebSocket, довгих з'єднань і `async def` view; його використовує Uvicorn.
+
+```python
+# config/wsgi.py
+import os
+from django.core.wsgi import get_wsgi_application
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+application = get_wsgi_application()
+```
+
+Сервер імпортує саме об'єкт `application`. У розробці ці файли не задіяні: `runserver` піднімає власний сервер.
+
+## Як файли пов'язані
+
+```
+запит → wsgi.py або asgi.py (на сервері)
+            ↓
+        settings.py — які застосунки, де маршрути, яка база
+            ↓
+        config/urls.py → include() → app/urls.py → view
+```
+
+`manage.py` лежить рівнем вище й до пакета проєкту не належить: він лише вказує на `config.settings` і виконує команди. Детально — в уроці «Команди manage.py».
+
+## Типові помилки / Нюанси
+
+| Що не так | Наслідок і як правильно |
+|---|---|
+| `SECRET_KEY` і `DEBUG` жорстко в коді | Ключ потрапляє в git і стає загальнодоступним; на продакшні `DEBUG` показує трасування. Значення беруть зі змінних середовища |
+| `DEBUG = False` без `ALLOWED_HOSTS` | Кожен запит відхиляється з помилкою `DisallowedHost` |
+| Застосунок не в `INSTALLED_APPS` | Моделі не потрапляють у міграції, шаблони й теги не знаходяться |
+| Довільний порядок `MIDDLEWARE` | `request.user` або CSRF перестають працювати: обробники залежать від попередніх у списку |
+| Плутати `STATICFILES_DIRS` і `STATIC_ROOT` | Перше — де лежать вихідні файли, друге — куди `collectstatic` їх збирає. Якщо переплутати, у розробці статика зникає |
+| Медіа й статика в одній папці | Завантажені користувачами файли потрапляють у git і перезаписуються при деплої |
+| `datetime.now()` при `USE_TZ = True` | Наївний час дає попередження й неправильні порівняння; використовують `timezone.now()` |
 
 ## Підсумок
 
-- `__init__.py` — робить `root/` пакетом (порожній, не чіпаємо).
-- `settings.py` — серце проєкту. Ключові блоки: `BASE_DIR`, `SECRET_KEY`/`DEBUG`/`ALLOWED_HOSTS` (безпека), `INSTALLED_APPS`, `MIDDLEWARE`, `ROOT_URLCONF`, `TEMPLATES`, `DATABASES`, `AUTH_PASSWORD_VALIDATORS`, мова/час, `STATIC_*`/`MEDIA_*`, `DEFAULT_AUTO_FIELD`.
-- `urls.py` — головний роутер; делегує маршрути модулям через `include()`.
-- `wsgi.py` / `asgi.py` — точки входу для бойового сервера; у розробці не чіпаєш.
-- `manage.py` (рівнем вище) — пульт для команд; читає `settings.py`.
+- `settings.py` тримає всю конфігурацію: `BASE_DIR`, безпеку (`SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`), `INSTALLED_APPS`, `MIDDLEWARE`, `ROOT_URLCONF`, `TEMPLATES`, `DATABASES`, валідатори паролів, локаль, статику й медіа.
+- `INSTALLED_APPS` — єдине джерело, з якого Django дізнається про застосунки; `MIDDLEWARE` чутливий до порядку.
+- SQLite підходить для розробки, PostgreSQL — для продакшну; параметри з'єднання й паролі беруть зі змінних середовища.
+- `STATICFILES_DIRS` — вихідна статика, `STATIC_ROOT` — результат `collectstatic`, `MEDIA_ROOT` — файли користувачів; це три різні речі.
+- `urls.py` делегує маршрути застосункам через `include()`, у режимі `DEBUG` додатково роздає медіа.
+- `wsgi.py` і `asgi.py` — точки входу для бойового сервера; у розробці не використовуються.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/ref/settings/" target="_blank" rel="noopener">Settings reference <i class="bi bi-box-arrow-up-right"></i></a></div></div>
