@@ -1,14 +1,6 @@
-# Форми: Form і ModelForm
+# Форми
 
-Будь-яке введення даних користувачем — контактна форма, реєстрація, коментар, замовлення, відгук про фільм — проходить через **форми Django**. Форма бере на себе три речі: рендер полів у HTML, валідацію того, що ввели, і безпечне перетворення сирих даних запиту на готові Python-значення. Цей урок — про два види форм, поля, віджети та повний цикл обробки. Приклади навмисно з **різних доменів** (контакти, блог, кіно, магазин, реєстрація), щоб ти бачила: форма — це універсальний механізм, а не щось прив'язане до конкретного проєкту.
-
-## Що таке форма
-
-> **Форма** — це Python-клас, який описує набір полів для введення, вміє **вивести** їх у HTML, **перевірити** те, що надіслав користувач, і повернути **очищені** дані (`cleaned_data`). У циклі запиту форма стоїть між сирим `request.POST` і твоєю логікою.
-
-Без форми довелося б вручну діставати кожне значення з `request.POST`, самому перевіряти формат, обробляти помилки й малювати `<input>` руками. Форма робить це все за тебе.
-
-> <i class="bi bi-lightbulb"></i> **Аналогія.** Форма — це прискіпливий адміністратор на рецепції. Ти простягаєш йому стос паперів (сирий `request.POST`), він звіряє кожен пункт із правилами, підкреслює червоним те, що заповнено неправильно, і лише охайно перевірену анкету пускає далі. Ти працюєш уже з чистими даними, а не з тим, що написав відвідувач.
+Форма — клас, який описує набір полів, виводить їх у HTML, перевіряє надіслані дані й повертає їх приведеними до потрібних типів. Вона стоїть між сирим `request.POST` і логікою застосунку: без неї кожне значення довелося б діставати, перевіряти й перетворювати вручну.
 
 ## Form проти ModelForm: коли який
 
@@ -20,7 +12,9 @@ Django має два класи форм, і вибір між ними — пе
 **`forms.Form` — поля вручну (контактна форма):**
 
 ```python
+# pages/forms.py
 from django import forms
+
 
 class ContactForm(forms.Form):
     name = forms.CharField(max_length=100, label='Ваше ім\'я')
@@ -34,8 +28,11 @@ class ContactForm(forms.Form):
 **`forms.ModelForm` — форма з моделі (стаття блогу):**
 
 ```python
+# blog/forms.py
 from django import forms
+
 from .models import Article
+
 
 class ArticleForm(forms.ModelForm):
     class Meta:
@@ -51,9 +48,9 @@ class ArticleForm(forms.ModelForm):
 
 ## Поля форми
 
-**Визначення.** Поле (`Field`) описує **один рядок введення**: його тип, чи обов'язкове воно, які обмеження і як валідується. Тип поля визначає, як значення буде перевірено й перетворено.
+Поле (`Field`) описує **один рядок введення**: його тип, чи обов'язкове воно, які обмеження і як валідується. Тип поля визначає, як значення буде перевірено й перетворено.
 
-**Як це працює.** Кожне поле — окремий клас із модуля `forms`:
+Кожне поле — окремий клас із модуля `forms`:
 
 | Поле | Приймає | Приклад застосування |
 |---|---|---|
@@ -70,8 +67,7 @@ class ArticleForm(forms.ModelForm):
 Форма-відгук про фільм показує кілька типів одразу:
 
 ```python
-from django import forms
-
+# cinema/forms.py
 class ReviewForm(forms.Form):
     RATINGS = [(i, f'{i} ★') for i in range(1, 6)]   # 5 варіантів оцінки
 
@@ -93,15 +89,16 @@ class ReviewForm(forms.Form):
 | `max_length` / `min_length` | обмеження довжини (для тексту) |
 | `widget=...` | як поле малюється (див. далі) |
 
-**Навіщо.** Тип поля — це **валідація безкоштовно**: `EmailField` сам відхилить `не-email`, `IntegerField` — літери, `DateField` — «31 лютого». Тобі не треба писати ці перевірки руками.
+Тип поля — це **валідація безкоштовно**: `EmailField` сам відхилить `не-email`, `IntegerField` — літери, `DateField` — «31 лютого». Тобі не треба писати ці перевірки руками.
 
 ## Віджети: як поле виглядає
 
 > **Віджет** — це те, **як** поле малюється в HTML. Одне й те саме поле можна показати як однорядковий `<input>`, велике `<textarea>`, випадний список чи набір радіокнопок. Тип поля відповідає за **дані**, віджет — за **вигляд**.
 
-**Як це працює.** Віджет задають аргументом `widget`:
+Віджет задають аргументом `widget`:
 
 ```python
+# shop/forms.py
 class OrderForm(forms.Form):
     # багаторядкове поле замість однорядкового
     comment = forms.CharField(widget=forms.Textarea, required=False)
@@ -138,7 +135,7 @@ class OrderForm(forms.Form):
 | `RadioSelect` | набір радіокнопок |
 | `CheckboxInput` | галочка (дефолт для `BooleanField`) |
 
-**Навіщо.** Розділення «поле / віджет» дає гнучкість: логіку валідації (email є email) описуєш один раз, а вигляд змінюєш під дизайн — випадний список чи радіокнопки, з класом Bootstrap чи без.
+Розділення «поле / віджет» дає гнучкість: логіку валідації (email є email) описуєш один раз, а вигляд змінюєш під дизайн — випадний список чи радіокнопки, з класом Bootstrap чи без.
 
 > <i class="bi bi-info-circle"></i> У `ModelForm` віджети перевизначають у `Meta.widgets`:
 > ```python
@@ -153,12 +150,11 @@ class OrderForm(forms.Form):
 
 Сира форма з запиту не є довіреною — її треба **перевірити**.
 
-**Як це працює.**
-
 1. `form.is_valid()` — запускає всю валідацію й повертає `True`/`False`.
 2. `form.cleaned_data` — словник з **очищеними, приведеними до типів** значеннями. З'являється лише **після** успішного `is_valid()`.
 
 ```python
+# pages/views.py
 form = ContactForm(request.POST)
 if form.is_valid():
     name = form.cleaned_data['name']       # вже str, обрізані пробіли
@@ -178,6 +174,7 @@ if form.is_valid():
 Вбудованих перевірок (тип, обов'язковість, довжина) часто мало — потрібні **свої правила**. Для одного поля опиши метод `clean_` + ім'я поля:
 
 ```python
+# accounts/forms.py
 class RegisterForm(forms.Form):
     username = forms.CharField(max_length=30)
     email = forms.EmailField()
@@ -198,6 +195,7 @@ Django викликає `clean_username()` автоматично під час 
 Ще приклад — відгук про фільм не має бути занадто коротким:
 
 ```python
+# cinema/forms.py
 class ReviewForm(forms.Form):
     text = forms.CharField(widget=forms.Textarea)
 
@@ -213,6 +211,7 @@ class ReviewForm(forms.Form):
 Коли правило зачіпає **два й більше поля** одразу (паролі збігаються, дата «до» не пізніша за «після»), одного `clean_<field>()` замало — потрібен загальний метод `clean(self)`:
 
 ```python
+# accounts/forms.py
 class RegisterForm(forms.Form):
     password1 = forms.CharField(widget=forms.PasswordInput, label='Пароль')
     password2 = forms.CharField(widget=forms.PasswordInput, label='Повторіть пароль')
@@ -233,6 +232,7 @@ class RegisterForm(forms.Form):
 Форму не збирають вручну з `<input>` — Django генерує HTML сам.
 
 ```django
+{# templates/blog/create.html #}
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
@@ -258,6 +258,7 @@ class RegisterForm(forms.Form):
 **Рендер поля поокремо** — коли треба гнучке верстання (наприклад, картка замовлення з власним HTML):
 
 ```django
+{# templates/pages/contact.html #}
 <div class="field">
   {{ form.email.label_tag }}      {# <label> #}
   {{ form.email }}                {# сам <input> #}
@@ -271,8 +272,11 @@ class RegisterForm(forms.Form):
 Одна view-функція обробляє **обидва випадки**: показ порожньої форми (GET) і прийом заповненої (POST). Це стандартний патерн Django.
 
 ```python
-from django.shortcuts import render, redirect
+# blog/views.py
+from django.shortcuts import redirect, render
+
 from .forms import ArticleForm
+
 
 def create_article(request):
     if request.method == 'POST':
@@ -298,7 +302,9 @@ def create_article(request):
 **А для `forms.Form` без моделі** (контактна форма) кроки ті самі, але замість `save()` ти сама вирішуєш, що робити з `cleaned_data`:
 
 ```python
+# pages/views.py
 from django.core.mail import send_mail
+
 
 def contact(request):
     if request.method == 'POST':
@@ -322,6 +328,7 @@ def contact(request):
 - `form.save(commit=False)` — створює об'єкт, але **не пише в БД**. Потрібно, коли треба доповнити об'єкт перед збереженням:
 
   ```python
+  # blog/views.py
   article = form.save(commit=False)
   article.author = request.user     # проставляємо автора вручну (його немає у формі)
   article.save()                    # тепер пишемо в БД
@@ -331,27 +338,19 @@ def contact(request):
 
 > <i class="bi bi-pin-angle"></i> Патерн «POST → обробка → **redirect**» (а не просто рендер після успіху) називають **Post/Redirect/Get**. Він рятує від повторного надсилання форми при оновленні сторінки (F5).
 
-## Де це в проєкті
-
-Форми — це **будь-яке введення даних**, і кожне зі свого домену:
-
-- **Контактна форма** → `forms.Form` (лист нікуди в БД не пишеться, тільки надсилається).
-- **Стаття блогу / товар магазину** → `ModelForm` з `form.save()`.
-- **Відгук про фільм** → `forms.Form` з `ChoiceField` для оцінки та `clean_text()`.
-- **Реєстрація** → `forms.Form` з `clean_username()` і перевіркою збігу паролів у `clean()`.
-- **Замовлення** → `ModelForm` з `save(commit=False)`, щоб проставити покупця.
-
 ## Типові помилки / Нюанси
 
-> <i class="bi bi-exclamation-triangle"></i> **Забутий `{% csrf_token %}`** → **403 Forbidden** при надсиланні POST. Найчастіша причина «форма не працює».
-
-> <i class="bi bi-exclamation-triangle"></i> **`cleaned_data` до `is_valid()`** → словника ще не існує. Спершу `is_valid()`, потім `cleaned_data`.
-
-> <i class="bi bi-exclamation-triangle"></i> **`clean_<field>()` без `return`** → поле мовчки зникне з `cleaned_data`. Завжди повертай значення.
-
-> <i class="bi bi-exclamation-triangle"></i> **`form.save()` на `forms.Form`** → `AttributeError`. Метод є лише в `ModelForm`; для звичайної форми обробляй `cleaned_data` руками.
-
-> <i class="bi bi-info-circle"></i> Після успішного POST — `redirect`, а не `render` (Post/Redirect/Get), щоб уникнути повторної відправки при F5.
+| Що не так | Наслідок і як правильно |
+|---|---|
+| Немає `{% csrf_token %}` у формі | 403 при надсиланні; токен обов'язковий для кожного POST |
+| Звернення до `cleaned_data` до `is_valid()` | Атрибута ще не існує: спершу валідація, потім дані |
+| `clean_<field>()` без `return` | Поле зникає з `cleaned_data` і далі виявляється порожнім |
+| `clean_<field>()` для правила між двома полями | Метод бачить лише своє поле; порівняння паролів чи дат робиться в `clean()` |
+| Форма з файлом без `request.FILES` | Файл не доходить до форми навіть за наявності `enctype` |
+| `form.save()` у `forms.Form` | Методу немає: він існує лише у `ModelForm`, для звичайної форми дані беруть із `cleaned_data` |
+| Поле, якого немає у формі, заповнюють після `save()` | Об'єкт уже записаний без нього; автора чи покупця проставляють через `save(commit=False)` |
+| `render` замість `redirect` після успіху | Оновлення сторінки повторно надсилає форму |
+| Невалідну форму рендерять заново порожньою | Користувач втрачає введене; у шаблон повертають ту саму `form` з помилками |
 
 ## Підсумок
 
