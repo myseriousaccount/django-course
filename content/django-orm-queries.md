@@ -140,75 +140,37 @@ Product.objects.bulk_create([
 
 ## get_or_create: створити, лише якщо ще немає
 
-`get_or_create()` шукає об'єкт за заданими полями, і якщо не знаходить — створює його. Повертає **кортеж із двох значень**: сам об'єкт і прапорець `created` (`True`, якщо щойно створили).
+`get_or_create()` шукає об'єкт за заданими полями і створює його, якщо не знайшов. Повертає **пару значень**: сам об'єкт і прапорець `created`.
 
 ```python
 # cinema/views.py
-# кінотека: користувач додає фільм у список "до перегляду"
 item, created = Watchlist.objects.get_or_create(user=request.user, movie=movie)
 
-if created:
-    message = 'Фільм додано до списку'
-else:
-    message = 'Цей фільм уже у вашому списку'
+message = 'Фільм додано' if created else 'Цей фільм уже у списку'
 ```
 
-**Чому зліва дві змінні через кому.** Це звичайне розпакування кортежу в Python — те саме, що в `for key, value in my_dict.items()`. Метод повертає пару значень, і ти одразу розкладаєш її по іменах:
+### Чому зліва дві змінні
+
+Метод повертає кортеж, і його розкладають по іменах — так само, як у `for key, value in my_dict.items()`. Скільки значень повертає метод, стільки імен зліва:
+
+| Метод | Повертає | Запис |
+|---|---|---|
+| `create()` | об'єкт | `item = …` або без присвоєння |
+| `get_or_create()` | `(об'єкт, created)` | `item, created = …` |
+| `update_or_create()` | `(об'єкт, created)` | `item, created = …` |
+
+Непотрібне значення кладуть у підкреслення: `item, _ = …` або `_, created = …`.
+
+### Чому `defaults`, а не звичайний аргумент
+
+Звичайні аргументи `get_or_create()` виконують **дві ролі одразу**: за ними шукають наявний рядок і з них же створюють новий. Тому поле, яке з часом змінюється, у пошук потрапляти не повинно.
 
 ```python
-# python manage.py shell
-item, created = Watchlist.objects.get_or_create(...)
-#  │      └── True, якщо рядок щойно створено; False, якщо знайдено наявний
-#  └── сам об'єкт Watchlist
-
-# те саме довшим записом
-pair = Watchlist.objects.get_or_create(...)   # (<Watchlist: ...>, True)
-item = pair[0]
-created = pair[1]
-```
-
-Порівняй із `create()`: той повертає **один** об'єкт, тому й ім'я зліва одне — або взагалі жодного, якщо об'єкт далі не потрібен.
-
-```python
-# python manage.py shell
-product = Product.objects.create(name='Мишка', price=300)    # одне значення
-Product.objects.create(name='Килимок', price=150)            # результат просто відкинуто
-```
-
-Кортеж повертається завжди, тож розпакувати доведеться в будь-якому разі — але зайве значення прийнято класти в підкреслення, щоб було видно, що воно свідомо ігнорується:
-
-```python
-# python manage.py shell
-item, created = ...get_or_create(...)   # потрібні обидва
-item, _       = ...get_or_create(...)   # потрібен лише об'єкт
-_, created    = ...get_or_create(...)   # потрібен лише прапорець (наприклад, для повідомлення)
-...get_or_create(...)                   # не потрібне нічого — рядок усе одно створиться
-```
-
-`_` — не спецсимвол, а звичайне ім'я змінної; це лише домовленість, зрозуміла всім, хто читає код.
-
-Без нього довелося б писати руками те саме в три рядки — і при кожному повторному натисканні кнопки з'являвся б дублікат:
-
-```python
-# cinema/views.py
-# ❌ так з'являються дублікати
-Watchlist.objects.create(user=request.user, movie=movie)
-
-# ❌ багатослівний ручний варіант того самого
-try:
-    item = Watchlist.objects.get(user=request.user, movie=movie)
-except Watchlist.DoesNotExist:
-    item = Watchlist.objects.create(user=request.user, movie=movie)
-```
-
-**`defaults` — поля лише для створення.** Звичайні аргументи `get_or_create()` виконують дві ролі одразу: за ними шукають наявний об'єкт і з них же створюють новий. Тому поле, яке змінюється з часом, у пошуку брати участі не повинно:
-
-```python
-# carts/views.py — ❌ quantity потрапляє в умову пошуку
+# carts/views.py — ❌ quantity стає частиною умови пошуку
 item, created = CartItem.objects.get_or_create(user=user, product=product, quantity=1)
 ```
 
-Запит перетвориться на `WHERE user=… AND product=… AND quantity=1`. Перший виклик створить рядок, далі кількість зросте до двох — і наступний виклик уже не знайде рядок із `quantity=1`, спробує створити другий і впаде з `IntegrityError` (або створить дублікат, якщо обмеження немає).
+Запит перетворюється на `WHERE user=… AND product=… AND quantity=1`. Після першого ж збільшення кількості рядок перестає знаходитись — метод спробує створити другий і впаде з `IntegrityError` (або створить дублікат, якщо унікального обмеження немає).
 
 ```python
 # carts/views.py — ✅ пошук за парою, кількість лише при створенні
@@ -219,60 +181,39 @@ item, created = CartItem.objects.get_or_create(
 )
 ```
 
-Якщо поле має власне значення за замовчуванням у моделі (`quantity = models.PositiveIntegerField(default=1)`), `defaults` для нього не потрібен зовсім. Він потрібен для полів, обов'язкових при створенні, але без значення за замовчуванням:
+Правило: аргументи читають як умову `WHERE`; усе, що згодом стане іншим (`quantity`, `status`, `price`), кладуть у `defaults`.
 
-```python
-# python manage.py shell
-# школа: журнал відвідуваності — шукаємо за учнем і датою,
-# а статус лише проставляємо при створенні запису
-record, created = Attendance.objects.get_or_create(
-    student=student,
-    date=today,
-    defaults={'status': 'present'},      # ← тільки для створення, у пошуку не бере участі
-)
-```
+Якщо поле має значення за замовчуванням у самій моделі (`quantity = models.PositiveIntegerField(default=1)`), `defaults` для нього не потрібен взагалі.
 
-**Лічильник замість дубліката.** Класичний випадок — «додати ще один такий самий»: замість нового рядка збільшуємо кількість у наявному.
+### Лічильник замість дубліката
 
 ```python
 # carts/views.py
-# магазин: повторне "додати в кошик" — не другий рядок, а +1 до кількості
-item, created = CartItem.objects.get_or_create(
-    user=request.user,
-    product=product,
-    defaults={'quantity': 1},
-)
+item, created = CartItem.objects.get_or_create(user=request.user, product=product)
 if not created:
     item.quantity += 1
-    item.save()
+    item.save(update_fields=['quantity'])
 ```
 
-**`update_or_create()`** — брат-близнюк: якщо об'єкт знайдено, оновлює його полями з `defaults`, якщо ні — створює.
+### update_or_create
+
+Той самий метод, але знайдений об'єкт ще й оновлюється полями з `defaults`:
 
 ```python
-# library/views.py
-# бібліотека: оцінка книжки — одна на користувача, повторна перезаписує стару
+# library/views.py — оцінка книжки одна на користувача, повторна перезаписує стару
 rating, created = Rating.objects.update_or_create(
     user=request.user,
     book=book,
-    defaults={'score': score},           # ← тут defaults ще й оновлює
+    defaults={'score': score},
 )
 ```
 
 | Метод | Знайшов | Не знайшов |
 |---|---|---|
 | `get()` | повертає об'єкт | помилка `DoesNotExist` |
-| `create()` | (не шукає) | створює завжди — звідси дублікати |
+| `create()` | не шукає | створює завжди — звідси дублікати |
 | `get_or_create()` | повертає знайдений, `created=False` | створює, `created=True` |
 | `update_or_create()` | оновлює полями `defaults` | створює |
-
-> <i class="bi bi-exclamation-triangle"></i> Забути, що повертається **кортеж**, — помилка номер один: `item = Model.objects.get_or_create(...)` покладе в `item` пару `(об'єкт, True)`, і наступний `item.quantity` впаде. Завжди розпаковуй: `item, created = ...`.
-
-> <i class="bi bi-exclamation-triangle"></i> Підступніший варіант тієї самої помилки — `created = Model.objects.get_or_create(...)`. Тут нічого не впаде: у `created` опиниться цілий кортеж, а непорожній кортеж завжди істинний, тож `if created:` спрацьовуватиме **щоразу**, навіть коли об'єкт лише знайдено. Правильно — `_, created = ...`.
-
-> <i class="bi bi-info-circle"></i> `get_or_create()` не замінює обмеження в базі. Якщо два запити прийдуть одночасно, обидва можуть не знайти запис і створити по одному. Надійний захист — `unique_together` (або `UniqueConstraint`) у `class Meta` моделі: тоді сама база не дозволить дублікат.
-
-> <i class="bi bi-exclamation-triangle"></i> Якщо за умовами пошуку знайдеться **кілька** об'єктів, `get_or_create()` підніме `MultipleObjectsReturned` — так само, як `get()`. Це ознака, що бракує унікального обмеження.
 
 ## Зміна: save, update
 
@@ -407,6 +348,10 @@ def post_feed(request):
 | `update()` і `bulk_create()` там, де потрібна логіка `save()` | Власний `save()` і сигнали не виконуються. Коли логіка потрібна — цикл із `.save()` |
 | Повторне звернення до того самого QuerySet | Запит виконується вдруге; результат зберігають у `list(qs)` |
 | Запит усередині циклу по об'єктах | Проблема N+1: сто об'єктів дають сто запитів. Розв'язується `select_related` і `prefetch_related` — урок «Оптимізація запитів» |
+| `item = Model.objects.get_or_create(…)` | У змінну потрапляє кортеж, і наступне звернення до поля падає з `AttributeError` |
+| `created = Model.objects.get_or_create(…)` | Помилки не буде, але непорожній кортеж завжди істинний, тож `if created:` спрацьовує щоразу |
+| Розрахунок на `get_or_create()` як на захист від дублікатів | Два одночасні запити можуть створити два рядки; гарантію дає `UniqueConstraint` у моделі |
+| `get_or_create()` за неунікальною умовою | `MultipleObjectsReturned` — ознака, що бракує унікального обмеження |
 | Немає `order_by` при пагінації | Порядок рядків не гарантований, тому сторінки можуть повторювати записи. Порядок задають у запиті або в `Meta.ordering` |
 
 ## Підсумок
