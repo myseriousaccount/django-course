@@ -257,6 +257,99 @@ $('#comment-form').on('submit', function (e) {
 
 **Практичне правило:** починай із форми. Якщо після дії користувач має лишитися рівно там, де був, і мигання сторінки псує враження — переписуй на AJAX. Ніколи не навпаки: AJAX «бо сучасно» додає коду й багів на рівному місці. Детальніше про вибір — в уроці «AJAX: коли застосовувати».
 
+## Що лишається у view, а що виносять
+
+Перевірки — це робота view: метод запиту, автентифікація, права на об'єкт, коректність вхідних даних. Виносять інше — обчислення предметної області: суми, знижки, залишки, правила складання замовлення.
+
+Найпростіша ознака, що обчислення час виносити: той самий блок з'явився у двох view. Розглянемо типовий приклад — додавання товару в кошик через AJAX.
+
+```python
+# carts/views.py — так виглядає операція, у якій змішано все
+def cart_add(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'message': 'Увійдіть в акаунт'}, status=401)
+
+    pid = request.POST.get('pid')
+    price = request.POST.get('price')          # ціна з браузера
+    CartItem.objects.create(user=request.user, product_id=pid, quantity=1)
+
+    total = Decimal('0.00')
+    items = CartItem.objects.filter(user=request.user)
+    for item in items:                          # окремий запит на кожен товар
+        total += item.product.price             # кількість не враховано
+
+    return JsonResponse({'count': items.count(), 'total': str(total)})
+```
+
+Проблеми тут не в перевірці автентифікації — вона на своєму місці. Проблеми такі: ціна приходить із браузера й підміняється в DevTools; кожен клік створює новий рядок замість збільшення кількості; підсумок ігнорує `quantity`; цикл дає N+1 запитів; а цей самий підрахунок доведеться повторити в кожній view, яка показує кошик.
+
+Обчислення переїжджають у менеджер моделі:
+
+```python
+# carts/models.py
+from decimal import Decimal
+
+from django.db import models
+from django.db.models import DecimalField, F, Sum
+
+
+class CartItemQuerySet(models.QuerySet):
+    def for_user(self, user):
+        return self.filter(user=user).select_related('product')
+
+    def total(self):
+        result = self.aggregate(
+            total=Sum(F('product__price') * F('quantity'), output_field=DecimalField()),
+        )
+        return result['total'] or Decimal('0.00')
+
+    def items_count(self):
+        return self.aggregate(n=Sum('quantity'))['n'] or 0
+
+
+class CartItem(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    objects = CartItemQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'product'], name='unique_cart_item'),
+        ]
+```
+
+Тепер сума рахується в базі одним запитом і враховує кількість, а обмеження не дозволяє дублікат навіть при подвійному кліку.
+
+У view лишаються перевірки, дія й відповідь:
+
+```python
+# carts/views.py
+@require_POST
+def cart_add(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'message': 'Увійдіть, щоб додавати товари'}, status=401)
+
+    product = get_object_or_404(Product, pk=request.POST.get('pid'), count__gt=0)
+
+    item, created = CartItem.objects.get_or_create(user=request.user, product=product)
+    if not created:
+        item.quantity += 1
+        item.save(update_fields=['quantity'])
+
+    return JsonResponse({'message': 'Товар додано', **cart_summary(request.user)})
+
+
+def cart_summary(user):
+    items = CartItem.objects.for_user(user)
+    return {'count': items.items_count(), 'total': str(items.total())}
+```
+
+Ціна більше не приймається з браузера: товар шукається за ідентифікатором, а ціна береться з бази. Умова `count__gt=0` заразом не дає додати те, чого немає на складі.
+
+> <i class="bi bi-info-circle"></i> Те, що операція виконується через AJAX, на цей поділ не впливає. AJAX змінює лише формат відповіді (`JsonResponse` замість `redirect`) і те, що неавторизованому користувачу краще повернути статус 401, ніж перенаправлення на сторінку входу.
+
 ## Чеклист: як написати нову операцію
 
 Коли не знаєш, з чого почати, іди строго по списку:
