@@ -222,8 +222,6 @@ class OrderCreateView(LoginRequiredMixin, CreateView):   # домішка ЗЛІ
     fields = ['product', 'quantity', 'address']
 ```
 
-> <i class="bi bi-lightbulb"></i> **Паралель із Flask.** Це прямий аналог `@login_required` із **Flask-Login**. І назва, і суть майже однакові: у Clinic-app ти ставила цей декоратор над роутами кабінету — тут робиш те саме над view Django. Різниця лише в тому, що для класів Django дає домішку замість декоратора.
-
 > <i class="bi bi-exclamation-triangle"></i> `LoginRequiredMixin` мусить стояти **першою** в списку батьків. Якщо поставити її після `CreateView`/`ListView`, MRO (порядок пошуку методів) може «проковтнути» перевірку, і захист не спрацює. Правило: домішки-захисники йдуть **зліва**.
 
 ## Налаштування: LOGIN_URL та LOGIN_REDIRECT_URL
@@ -269,6 +267,6 @@ LOGIN_REDIRECT_URL = 'home'
 - **`login()`** відкриває сесію, **`logout()`** закриває; після обох майже завжди `redirect`. Реєстрація = `create_user()` + одразу `login()`.
 - **`request.user`** доступний усюди; **`request.user.is_authenticated`** (атрибут, без дужок) відрізняє гостя від увійшлого.
 - Ланцюжок «звідки сторінка знає, хто ти»: cookie `sessionid` → `SessionMiddleware` → `AuthenticationMiddleware` → `request.user` у view → context processor `auth` → `{{ user }}` у шаблоні. Імпорт `User` потрібен лише для **запитів до таблиці** користувачів, а не для доступу до поточного.
-- **`@login_required`** (для функцій) і **`LoginRequiredMixin`** (для класів, ставити зліва) захищають сторінки — прямий аналог `@login_required` із Flask-Login. `LOGIN_URL` і `LOGIN_REDIRECT_URL` керують перенаправленнями.
+- **`@login_required`** (для функцій) і **`LoginRequiredMixin`** (для класів, ставити зліва) захищають сторінки; `LOGIN_URL` і `LOGIN_REDIRECT_URL` керують перенаправленнями.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/auth/default/" target="_blank" rel="noopener">Using the authentication system <i class="bi bi-box-arrow-up-right"></i></a></div></div>

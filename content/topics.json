@@ -15,7 +15,7 @@
 
     { "id": "django-what-is", "section": "intro", "icon": "bi-info-circle",
       "title": "Що таке Django",
-      "summary": "Full-stack фреймворк, патерн MTV, «batteries included», чим відрізняється від Flask і коли обирати Django." },
+      "summary": "Full-stack фреймворк, патерн MTV, склад «batteries included» і ознаки проєкту, для якого Django доречний." },
 
     { "id": "django-philosophy", "section": "intro", "icon": "bi-compass",
       "title": "Принципи Django",
@@ -115,11 +115,11 @@
 
     { "id": "django-auth-helpers", "section": "users", "icon": "bi-key",
       "title": "Автентифікація",
-      "summary": "authenticate, login, logout, request.user, @login_required, create_user: готові інструменти входу (аналог Flask-Login)." },
+      "summary": "authenticate, login, logout, request.user, @login_required, create_user і ланцюжок, яким сторінка дізнається поточного користувача." },
 
     { "id": "django-messages", "section": "users", "icon": "bi-chat-dots",
       "title": "Повідомлення",
-      "summary": "messages.success/error/info, вивід у шаблоні, MessageMiddleware: разові повідомлення після дій (аналог flash з Flask)." },
+      "summary": "messages.success/error/info, вивід у шаблоні, MessageMiddleware: разові повідомлення, що переживають redirect." },
 
     { "id": "django-admin-customization", "section": "users", "icon": "bi-tools",
       "title": "Адмін-панель",

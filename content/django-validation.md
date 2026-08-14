@@ -47,8 +47,6 @@ def login_view(request):
     return render(request, "login.html", {"form": form})
 ```
 
-> <i class="bi bi-pin-angle"></i> Якщо приходиш із Flask: серверний рівень тут — аналог **WTForms** (`form.validate_on_submit()`, валідатори `DataRequired`, `Length`, `NumberRange`), лише вбудований у фреймворк.
-
 ---
 
 ## Валідація без форми
@@ -220,8 +218,6 @@ class BookForm(forms.Form):
 ```
 
 Валідатор — це перевірка «одним рядком», яку легко перевикористати на багатьох полях. Не пиши те, що вже є у фреймворку.
-
-> <i class="bi bi-info-circle"></i> Це прямий аналог валідаторів WTForms (`NumberRange`, `Length`, `Regexp`). Ідея та сама: декларативний список перевірок біля поля.
 
 ### 2. `clean_<field>()` — валідація одного поля
 

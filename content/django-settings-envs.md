@@ -95,8 +95,6 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
 > <i class="bi bi-info-circle"></i> `.env` лежить локально й на сервері (з різними значеннями), але **ніколи** в git. У `.gitignore` додають рядок `.env`. Так секрети розробки й проду різні, а в коді — **однаковий** `settings.py`.
 
-> <i class="bi bi-info-circle"></i> Паралель із Flask: там теж стандарт — `os.environ` + `python-dotenv`, часто через `app.config.from_prefixed_env()`. Ідея та сама у всіх фреймворках: **код читає секрети з оточення, а не містить їх**.
-
 ## Як розділяють dev і prod налаштування
 
 Коли відмінностей багато, `settings.py` ділять. Три поширені підходи:

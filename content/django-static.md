@@ -64,8 +64,6 @@ static/
 
 `{% static 'css/blog.css' %}` згенерує правильний `/static/css/blog.css`, враховуючи `STATIC_URL`. Зміниш `STATIC_URL` чи додаси CDN — усі посилання оновляться самі.
 
-> <i class="bi bi-info-circle"></i> Прямий аналог Flask: там ти писала `{{ url_for('static', filename='css/style.css') }}`. У Django та сама ідея — `{% static 'css/style.css' %}`. Принцип однаковий: **не хардкодити шлях, хай фреймворк побудує URL сам**.
-
 ## `collectstatic` і чому dev/prod різні
 
 Це ключовий архітектурний момент.
@@ -143,7 +141,7 @@ class Book(models.Model):
 
 - Статика — незмінні файли розробника: CSS, JS, картинки, шрифти.
 - `STATIC_URL` — **адреса** (`/static/...`), `STATICFILES_DIRS` — **папки-джерела на диску**, `STATIC_ROOT` — куди `collectstatic` збирає все для проду. Це три різні речі.
-- У шаблоні: `{% load static %}` + `{% static 'css/blog.css' %}` (аналог `url_for('static', ...)` з Flask).
+- У шаблоні: `{% load static %}` і `{% static 'css/blog.css' %}` — шлях будує фреймворк, у розмітці його не хардкодять.
 - **dev:** Django роздає сам (`DEBUG=True`). **prod:** `DEBUG=False` → треба `collectstatic` + вебсервер.
 - **MEDIA** (`MEDIA_URL`/`MEDIA_ROOT`) — окремо для файлів, що завантажують користувачі (аватар, фото товару, обкладинка книги); звертаються через `{{ obj.field.url }}`, не через `{% static %}`.
 - `django.contrib.staticfiles` — вбудований app, що дає тег `{% static %}` і `collectstatic`.

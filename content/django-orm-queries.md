@@ -25,8 +25,6 @@ Book.objects.get(isbn='978-0000')      # РІВНО один об'єкт
 >
 > Тому для detail-сторінок замість голого `.get()` зазвичай беруть `get_object_or_404` (див. урок про shortcuts).
 
-> <i class="bi bi-info-circle"></i> Для порівняння зі SQLAlchemy: `filter()` відповідає `Query.filter_by()`, `.get()` — `session.get()`. Відмінність у тому, що Django піднімає винятки моделі замість повернення `None`.
-
 ## Досліджувати результат: order_by, count, exists, first, last
 
 Методи, що впорядковують QuerySet або дістають про нього коротку інформацію.

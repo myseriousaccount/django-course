@@ -49,8 +49,6 @@ class ArticleForm(forms.ModelForm):
 
 > <i class="bi bi-info-circle"></i> Правило вибору просте: **зберігаєш у модель — `ModelForm`; не зберігаєш — `Form`**. `ModelForm` — це DRY у дії: не дублюєш опис полів, які вже є в моделі.
 
-<i class="bi bi-lightbulb"></i> Паралель з Flask: `forms.Form` — це як `FlaskForm` у WTForms, де кожне поле ти прописуєш руками. А `ModelForm` — це те, чого у «голому» WTForms немає з коробки: аналог доводилося збирати через розширення `WTForms-Alchemy`. Django дає це вбудовано.
-
 ## Поля форми
 
 **Визначення.** Поле (`Field`) описує **один рядок введення**: його тип, чи обов'язкове воно, які обмеження і як валідується. Тип поля визначає, як значення буде перевірено й перетворено.
@@ -230,8 +228,6 @@ class RegisterForm(forms.Form):
 
 **Різниця.** `clean_<field>()` бачить **одне** поле й повертає його значення; `clean()` бачить **усі** поля (через `cleaned_data`/`super().clean()`) і повертає весь словник. Помилка з `clean()` за замовчуванням показується вгорі форми (не біля конкретного поля).
 
-<i class="bi bi-lightbulb"></i> Паралель з WTForms: `is_valid()` — це аналог `form.validate_on_submit()`, `cleaned_data` — аналог `form.<field>.data`, `clean_<field>()` — аналог `validate_<field>()`, а `clean()` — аналог валідатора рівня форми. Логіка майже дзеркальна.
-
 ## Рендер у шаблоні
 
 Форму не збирають вручну з `<input>` — Django генерує HTML сам.
@@ -257,7 +253,7 @@ class RegisterForm(forms.Form):
 
 > **CSRF-токен** — прихований токен захисту від атаки «підробка міжсайтового запиту» (Cross-Site Request Forgery). Django вимагає його на кожній POST-формі.
 
-> <i class="bi bi-exclamation-triangle"></i> Забудеш `{% csrf_token %}` — отримаєш помилку **403 Forbidden** при надсиланні. Це найчастіша причина «форма не працює» у новачків. У WTForms роль токена грає `{{ form.csrf_token }}`, тут — тег шаблону.
+> <i class="bi bi-exclamation-triangle"></i> Забудеш `{% csrf_token %}` — отримаєш помилку **403 Forbidden** при надсиланні. Це найчастіша причина, чому форма мовчки не зберігає дані.
 
 **Рендер поля поокремо** — коли треба гнучке верстання (наприклад, картка замовлення з власним HTML):
 
@@ -344,23 +340,6 @@ def contact(request):
 - **Відгук про фільм** → `forms.Form` з `ChoiceField` для оцінки та `clean_text()`.
 - **Реєстрація** → `forms.Form` з `clean_username()` і перевіркою збігу паролів у `clean()`.
 - **Замовлення** → `ModelForm` з `save(commit=False)`, щоб проставити покупця.
-
-Загальна карта відповідностей із Flask:
-
-| Django | WTForms / Flask |
-|---|---|
-| `forms.Form` | `FlaskForm` |
-| `forms.ModelForm` | ≈ WTForms-Alchemy |
-| `forms.CharField(widget=Textarea)` | `TextAreaField` |
-| `forms.ChoiceField` | `SelectField` |
-| `form.is_valid()` | `form.validate_on_submit()` |
-| `form.cleaned_data['x']` | `form.x.data` |
-| `clean_<field>()` | `validate_<field>()` |
-| `clean()` | валідатор рівня форми |
-| `{% csrf_token %}` | `{{ form.csrf_token }}` |
-| `form.save()` (ModelForm) | (писала вручну через сесію БД) |
-
-Ти вже володієш ідеєю форм із WTForms — у Django змінюються назви методів і додається безкоштовний `ModelForm` із `save()`.
 
 ## Типові помилки / Нюанси
 

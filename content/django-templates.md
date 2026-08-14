@@ -195,8 +195,6 @@ return render(request, 'library/book_list.html', {'books': books})
 {% endfor %}
 ```
 
-> <i class="bi bi-info-circle"></i> Якщо знаєш Jinja2 з Flask — синтаксис майже ідентичний: `{{ змінна }}`, `{% тег %}`, `{% extends %}`, `{% block %}`. Django Templates — близький родич, але це **окремий рушій**: свої правила, трохи менше «магії» у Python-виразах (наприклад, не можна викликати функцію з аргументами прямо в шаблоні). У Flask аналог `include` — теж `{% include %}`, а аналог `block.super` — `{{ super() }}`.
-
 ## Типові помилки / Нюанси
 
 > <i class="bi bi-exclamation-triangle"></i> **`{% extends %}` не першим рядком** → `TemplateSyntaxError`. Тег наслідування має бути найпершим у файлі (перед ним лише коментарі).
@@ -215,6 +213,6 @@ return render(request, 'library/book_list.html', {'books': books})
 - `{% include %}` — вставити окремий фрагмент (картку товару/книги, форму); `with` передає йому конкретні дані.
 - `TEMPLATES`: **`DIRS`** — спільна папка проєкту (шукається першою), **`APP_DIRS`** — папки всередині кожного app; обидва підходи валідні, часто поєднуються.
 - Підпапка за іменем модуля (`blog/`, `shop/`, `library/`) рятує від конфлікту однакових імен.
-- Дані: `context` у view → `{{ }}` у шаблоні (схоже на Jinja2, але це окремий рушій).
+- Дані: `context` у view → `{{ }}` у шаблоні.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/templates/" target="_blank" rel="noopener">Templates <i class="bi bi-box-arrow-up-right"></i></a></div></div>

@@ -216,22 +216,6 @@
 - **Форум** (`thread.html`): `{{ comment.created|timesince }}`, `{% for comment in comments %}{% empty %}`.
 - **Базовий шаблон** (`base.html`): `{% load static %}`, `{% static 'css/style.css' %}`, `{% block content %}`, форми з `{% csrf_token %}`.
 
-## Паралель із Jinja2 (Flask)
-
-Синтаксис навмисно схожий — `{% ... %}` для логіки, `{{ ... }}` для виводу, `|` для фільтрів. Якщо ти писала шаблони у Flask, тут відчуєш себе вдома. Але це **інший рушій**, і дрібниці відрізняються:
-
-| Аспект | Jinja2 (Flask) | Django Templates |
-|---|---|---|
-| Умови/цикли | `{% if %}`, `{% for %}` — майже однаково | так само |
-| Виклик методів | можна: `{{ user.get_name() }}` | **не можна** дужок: `{{ user.get_name }}` |
-| Фільтр аргументи | `truncate(20)` | `truncatewords:20` (двокрапка) |
-| URL | `{{ url_for('name') }}` | `{% url 'name' %}` |
-| Статика | `{{ url_for('static', ...) }}` | `{% static '...' %}` (з `{% load static %}`) |
-| Наслідування | `{% extends %}` + `{% block %}` | так само |
-| Філософія | гнучкий, дозволяє логіку | навмисно обмежений |
-
-> <i class="bi bi-exclamation-triangle"></i> Головна пастка при переході: у Django-шаблоні **не можна викликати функції з аргументами** й немає круглих дужок. Django свідомо обмежує логіку в шаблонах — складне має жити у view, а не в HTML. Це прямий наслідок принципу слабкої зв'язності.
-
 ## Типові помилки / Нюанси
 
 > <i class="bi bi-exclamation-triangle"></i> **Незакритий блок** (`{% if %}` без `{% endif %}`) → шаблон не скомпілюється. Django не орієнтується на відступи.
@@ -248,6 +232,6 @@
 - **Наслідування**: `{% extends %}` (перший рядок) + `{% block %}` заповнює каркас; `{% include %}` вставляє повторюваний шматок.
 - **Теги підключення** працюють з іменами й логічними шляхами: `{% url %}`, `{% static %}` (потрібен `{% load static %}`), обов'язковий `{% csrf_token %}` у POST-формах; є ще `{% with %}`, `{% now %}`, `{% cycle %}`.
 - **Фільтри** (`|`) форматують значення при виводі: `date`, `default`, `length`, `truncatewords`, `floatformat`, `yesno`, `timesince`, `pluralize`, `join`, `linebreaks`, `safe`; їх можна ланцюжити.
-- Синтаксис близький до **Jinja2**, але це окремий рушій: у Django немає викликів функцій із дужками, а фільтри беруть аргумент через двокрапку. Складну логіку тримай у view, а не в HTML.
+- У шаблонах Django немає викликів функцій із дужками, а фільтри беруть аргумент через двокрапку: складна логіка лишається у view, а не в розмітці.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/ref/templates/builtins/" target="_blank" rel="noopener">Built-in tags and filters <i class="bi bi-box-arrow-up-right"></i></a></div></div>

@@ -168,17 +168,6 @@ class Product(models.Model):
 
 Індекс пришвидшує пошук і сортування за полем, але сповільнює запис і займає місце, тому його ставлять на поля, за якими справді фільтрують. `unique=True` створює індекс автоматично. Первинний ключ індексується завжди.
 
-## Порівняння зі SQLAlchemy
-
-| Django | SQLAlchemy |
-|---|---|
-| `models.CharField(max_length=200)` | `db.Column(db.String(200))` |
-| `models.ForeignKey(Author, on_delete=…)` | `db.ForeignKey('author.id')` плюс `relationship` |
-| `related_name='posts'` | `backref='posts'` |
-| `class Meta: ordering = [...]` | `order_by` у запиті |
-
-Основна відмінність: у Django зв'язок і його зворотний бік описуються одним полем, а `on_delete` вимагається явно.
-
 ## Типові помилки / Нюанси
 
 | Що не так | Наслідок і як правильно |

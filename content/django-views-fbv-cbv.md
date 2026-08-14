@@ -193,7 +193,7 @@ class BookList(ListView):
         return context
 ```
 
-> <i class="bi bi-lightbulb"></i> Тут згадується минулий урок: `Book.objects.filter(...)` краще винести в менеджер (`Book.objects.available()`) — і `get_queryset` стане однорядковим. CBV і «товсті моделі» чудово поєднуються.
+> <i class="bi bi-lightbulb"></i> Тут згадується минулий урок: `Book.objects.filter(...)` краще винести в менеджер (`Book.objects.available()`) — і `get_queryset` стане однорядковим. Класові views добре поєднуються з винесенням логіки в менеджери.
 
 ## Типові помилки / Нюанси
 
