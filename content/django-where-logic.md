@@ -7,7 +7,7 @@
 Подивись, як легко view розпухає, коли логіка живе в ній:
 
 ```python
-# ❌ Логіка осідає у view (магазин)
+# ❌ shop/views.py — логіка осідає у view
 def checkout(request, order_id):
     order = Order.objects.get(id=order_id)
 
@@ -56,7 +56,7 @@ class Order(models.Model):
 Тепер у view лишається сама координація:
 
 ```python
-# ✅ View лише приймає запит і делегує моделі
+# ✅ shop/views.py — view приймає запит і делегує моделі
 def checkout(request, order_id):
     order = Order.objects.get(id=order_id)
     order.mark_paid()

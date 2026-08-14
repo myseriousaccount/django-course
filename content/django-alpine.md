@@ -6,9 +6,10 @@
 
 > **Alpine.js** — мінімалістична JavaScript-бібліотека, що додає інтерактивність **прямо в HTML через атрибути** (`x-data`, `x-show`, `@click`…). Її часто називають «**Tailwind для JavaScript**»: як Tailwind описує стилі в атрибутах, так Alpine описує поведінку.
 
-**Як це працює.** Уся логіка живе в розмітці — без окремого `.js`-файлу, без `getElementById`. Ось повноцінний лічильник:
+Уся логіка живе в розмітці — без окремого `.js`-файлу, без `getElementById`. Ось повноцінний лічильник:
 
 ```html
+{# templates/blog/post_detail.html #}
 <div x-data="{ count: 0 }">
     <button @click="count++">+</button>
     <span x-text="count"></span>
@@ -19,7 +20,7 @@
 
 ## Навіщо це в Django-проєкті
 
-**Навіщо.** Django рендерить HTML на сервері, а Alpine «оживляє» дрібниці в браузері без перезавантаження. Він займає нішу **між «нічого» і «fetch/jQuery»**: коли повноцінний AJAX — забагато, а голий vanilla — задовго.
+Django рендерить HTML на сервері, а Alpine «оживляє» дрібниці в браузері без перезавантаження. Він займає нішу **між «нічого» і «fetch/jQuery»**: коли повноцінний AJAX — забагато, а голий vanilla — задовго.
 
 Типові задачі для Alpine:
 - показати/сховати (бургер-меню, FAQ, дропдаун);
@@ -27,13 +28,14 @@
 - модальні вікна;
 - лічильники, перемикачі, живі підсумки форми.
 
-> <i class="bi bi-lightbulb"></i> Аналогія: Alpine — це як теги `{% if %}` / `{% for %}` у шаблоні, але виконуються **в браузері** й **реагують на дії** користувача. Django-теги вирішують, який HTML віддати; Alpine-атрибути вирішують, як він поводиться після відкриття.
+> <i class="bi bi-info-circle"></i> Відмінність від шаблонних тегів: `{% if %}` і `{% for %}` виконуються один раз на сервері під час рендеру, а директиви Alpine працюють у браузері й перераховуються при кожній зміні стану.
 
 ## Підключення
 
 Один рядок із CDN — і готово:
 
 ```html
+{# templates/_layouts/base.html #}
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 ```
 
@@ -60,6 +62,7 @@
 ### 1. Показати/сховати — бургер-меню
 
 ```html
+{# templates/blog/post_detail.html #}
 <div x-data="{ open: false }">
     <button @click="open = !open">☰ Меню</button>
     <nav x-show="open">
@@ -71,6 +74,7 @@
 ### 2. Вкладки
 
 ```html
+{# templates/blog/post_detail.html #}
 <div x-data="{ tab: 'theory' }">
     <button @click="tab = 'theory'" :class="tab === 'theory' && 'active'">Теорія</button>
     <button @click="tab = 'quiz'"   :class="tab === 'quiz' && 'active'">Тест</button>
@@ -85,6 +89,7 @@
 ### 3. Модальне вікно
 
 ```html
+{# templates/blog/post_detail.html #}
 <div x-data="{ open: false }">
     <button @click="open = true">Відкрити</button>
 
@@ -100,6 +105,7 @@
 ### 4. Список із даних
 
 ```html
+{# templates/cinema/movie_list.html #}
 <ul x-data="{ genres: ['Драма', 'Комедія', 'Трилер'] }">
     <template x-for="genre in genres">
         <li x-text="genre"></li>
@@ -114,6 +120,7 @@ Alpine працює **в браузері**, а дані спершу готує
 **1. Маленькі дані — прямо з шаблону в `x-data`:**
 
 ```html
+{# templates/blog/post_detail.html #}
 <div x-data="{ likes: {{ post.likes_count }} }">
     <button @click="likes++">👍</button>
     <span x-text="likes"></span>
@@ -124,6 +131,7 @@ Alpine працює **в браузері**, а дані спершу готує
 **2. Динамічні дані — `fetch` до Django всередині Alpine** (той самий підхід і CSRF, що в уроці про JavaScript). Приклад — «додати книгу в список для читання»:
 
 ```html
+{# templates/blog/post_detail.html #}
 <div x-data="{ saved: false, toggle() {
         fetch('{% url 'toggle_reading_list' book.id %}', {
             method: 'POST',
@@ -148,11 +156,13 @@ Alpine працює **в браузері**, а дані спершу готує
 
 ## Типові помилки / Нюанси
 
-> <i class="bi bi-exclamation-triangle"></i> Забути `defer` у `<script>` Alpine — тоді він спробує запуститись раніше за HTML і нічого не «оживить».
-
-> <i class="bi bi-exclamation-triangle"></i> `x-show` лишає елемент у DOM (лише ховає через CSS), а `x-if` **прибирає** його зовсім. `x-if` і `x-for` працюють **тільки** всередині `<template>`.
-
-> <i class="bi bi-info-circle"></i> Alpine — про зручність у браузері, а не про безпеку. Валідацію й перевірку прав **завжди** роби на сервері (Django), бо будь-який Alpine-код відкритий у браузері.
+| Що не так | Наслідок і як правильно |
+|---|---|
+| Директиви поза блоком з `x-data` | Стану не існує, і жодна директива не спрацьовує |
+| Дані з Django вставлені в `x-data` без `escapejs` або `json_script` | Апостроф чи лапки в тексті ламають вираз, і компонент не ініціалізується |
+| `<script>` Alpine без `defer` | Бібліотека виконується раніше за розмітку й не бачить компонентів |
+| Перевірки прав у стані компонента | Значення видно й змінюється з консолі; рішення ухвалює сервер |
+| Складна логіка всередині атрибутів | Розмітка стає нечитабельною; такі випадки виносять у звичайний JS-файл |
 
 ## Підсумок
 

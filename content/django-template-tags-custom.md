@@ -165,6 +165,7 @@ def product_card(product, show_price=True):
 ```
 
 ```html
+{# templates/catalog/product_list.html #}
 {% load shop_extras %}
 {% for p in products %}
   {% product_card p %}

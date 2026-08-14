@@ -17,8 +17,11 @@
 Саме твій випадок із тегами. Замість незручного `<select multiple>` Django покаже **дві колонки**: доступні ліворуч, вибрані праворуч, з пошуком і кнопками «додати/прибрати».
 
 ```python
+# news/admin.py
 from django.contrib import admin
+
 from .models import News
+
 
 @admin.register(News)
 class NewsAdmin(admin.ModelAdmin):
@@ -44,6 +47,7 @@ class PostAdmin(admin.ModelAdmin):
 Найлегший варіант: показує лише **число-ID** й іконку-лупу, що відкриває вікно пошуку. Не вантажить список узагалі — добре для дуже великих таблиць.
 
 ```python
+# shop/admin.py
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     raw_id_fields = ('customer',)
@@ -85,6 +89,7 @@ class ArticleAdmin(admin.ModelAdmin):
 Показати в формі те, що не можна редагувати (дати створення, лічильники) або **обчислене** значення:
 
 ```python
+# shop/admin.py
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'total_display')
@@ -99,6 +104,7 @@ class OrderAdmin(admin.ModelAdmin):
 `ImageField` за замовчуванням показує лише посилання на файл. Щоб бачити **саму картинку**, додають обчислене readonly-поле, що повертає HTML:
 
 ```python
+# catalog/admin.py
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import Product
@@ -121,8 +127,10 @@ class ProductAdmin(admin.ModelAdmin):
 Наприклад, зробити всі `TextField` більшими за розміром прямо в адмінці:
 
 ```python
+# blog/admin.py
 from django.db import models
 from django import forms
+
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):

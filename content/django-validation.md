@@ -34,6 +34,7 @@ curl -X POST https://example.com/login/ -d "username=&password="
 **Чи перевіряти на сервері те, що вже перевірив JavaScript.** Так, завжди. Це не дублювання, а різні ролі: клієнт відповідає за зручність, сервер — за коректність.
 
 ```python
+# accounts/views.py
 from django.contrib.auth.forms import AuthenticationForm
 
 def login_view(request):
@@ -72,6 +73,7 @@ User.objects.create_user(username='', email='не-email', password='1')
 Для двох-трьох полів це нормальний і читабельний шлях:
 
 ```python
+# cinema/views.py
 @require_POST
 def review_add(request, movie_id):
     text = (request.POST.get('text') or '').strip()
@@ -99,6 +101,7 @@ def review_add(request, movie_id):
 Якщо обмеження вже описані в моделі, їх можна ввімкнути явно — тоді не доведеться дублювати ті самі правила у view:
 
 ```python
+# cinema/views.py
 from django.core.exceptions import ValidationError
 
 review = Review(movie_id=movie_id, author=request.user, text=text, score=score)
@@ -117,6 +120,7 @@ except ValidationError as e:
 `AUTH_PASSWORD_VALIDATORS` із `settings.py` застосовуються **тільки** через форми автентифікації або явний виклик. `create_user()` їх не перевіряє, тож пароль `1` пройде:
 
 ```python
+# accounts/views.py
 from django.contrib.auth.password_validation import validate_password
 
 try:
@@ -148,6 +152,7 @@ except ValidationError as e:
 > **`blur`** — подія, що спрацьовує, коли поле **втрачає фокус** (клік або Tab на інше поле).
 
 ```js
+// static/js/register.js
 // перевірити збіг паролів, коли користувач залишив поле підтвердження
 $('#password_confirm').on('blur', function () {
     const ok = $('#password').val() === $(this).val();
@@ -193,6 +198,7 @@ $('#password_confirm').on('blur', function () {
 | `EmailValidator()` | коректність email |
 
 ```python
+# library/forms.py
 from django import forms
 from django.core.validators import MinValueValidator, RegexValidator
 
@@ -226,6 +232,7 @@ class BookForm(forms.Form):
 Django викликає його автоматично під час `is_valid()`. Ти читаєш значення з `self.cleaned_data`, перевіряєш і **обовʼязково повертаєш** його назад:
 
 ```python
+# blog/forms.py
 class PostForm(forms.Form):
     title = forms.CharField(max_length=200)
 
@@ -251,6 +258,7 @@ class PostForm(forms.Form):
 Класичні приклади: пароль має збігатися з підтвердженням; дата початку сеансу — бути раніше за дату завершення. Тут `clean_<field>()` не підходить, бо він бачить лише одне поле. Використовуй `clean()` і кидай помилку або на конкретне поле (`add_error`), або на форму загалом:
 
 ```python
+# cinema/forms.py
 class ScreeningForm(forms.Form):        # сеанс у кінотеатрі
     starts_at = forms.DateTimeField()
     ends_at = forms.DateTimeField()
@@ -267,6 +275,7 @@ class ScreeningForm(forms.Form):        # сеанс у кінотеатрі
 А ось той самий механізм для пари «пароль + підтвердження» у реєстрації:
 
 ```python
+# accounts/forms.py
 def clean(self):
     cleaned = super().clean()
     p1 = cleaned.get("password")
@@ -287,6 +296,7 @@ def clean(self):
 Для розширень є готовий `FileExtensionValidator`; розмір перевіряєш у `clean_<field>()`:
 
 ```python
+# library/forms.py
 from django.core.validators import FileExtensionValidator
 
 class CoverForm(forms.Form):            # обкладинка книги/фільму
@@ -314,7 +324,9 @@ class CoverForm(forms.Form):            # обкладинка книги/філ
 `ModelForm` бере поля з моделі, тож частина правил (типи, `max_length`) успадковується автоматично. Додаєш лише те, чого моделі бракує:
 
 ```python
+# blog/forms.py
 from django import forms
+
 from blog.models import Post
 
 class PostForm(forms.ModelForm):
@@ -343,6 +355,7 @@ class PostForm(forms.ModelForm):
 Проста форма без моделі — бо їй нема що зберігати в БД, вона лише надсилає лист:
 
 ```python
+# pages/forms.py
 class ContactForm(forms.Form):
     name = forms.CharField(max_length=80)
     email = forms.EmailField()                      # EmailField сам перевіряє формат
@@ -360,6 +373,7 @@ class ContactForm(forms.Form):
 ### Оформлення замовлення (`forms.Form`, кількість)
 
 ```python
+# shop/forms.py
 class OrderItemForm(forms.Form):
     product_id = forms.IntegerField(widget=forms.HiddenInput)
     quantity = forms.IntegerField(min_value=1)
@@ -378,9 +392,11 @@ class OrderItemForm(forms.Form):
 Тонкий, але дуже частий випадок. При редагуванні email має лишатися унікальним — але **не конфліктувати із самим користувачем**, якого ти зараз редагуєш. Тому в запиті виключаємо поточний обʼєкт через `.exclude(pk=...)`:
 
 ```python
+# accounts/forms.py
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
 
 class ProfileForm(forms.ModelForm):
     class Meta:
@@ -539,6 +555,7 @@ def register(request):
 Друга, допоміжна view — для живої перевірки з браузера:
 
 ```python
+# accounts/views.py
 def register_check(request):
     username = request.GET.get('username', '').strip()
     email = request.GET.get('email', '').strip()
@@ -554,6 +571,7 @@ def register_check(request):
 ### 5. Шаблон
 
 ```html
+{# templates/accounts/register.html #}
 <form method="post" id="register-form">
   {% csrf_token %}
 
@@ -582,6 +600,7 @@ def register_check(request):
 Клієнтський рівень нічого не вирішує — він лише скорочує час до фідбеку:
 
 ```js
+// static/js/register.js
 $(function () {
     // збіг паролів — перевіряємо на виході з поля
     $('#id_password_confirm').on('blur', function () {
@@ -622,6 +641,7 @@ $(function () {
 У view нічого спеціального робити не треба — просто повертаєш ту саму форму назад у шаблон, і вона «памʼятає» свої помилки та введені значення:
 
 ```python
+# blog/views.py
 def create_post(request):
     if request.method == "POST":
         form = PostForm(request.POST)
@@ -637,6 +657,7 @@ def create_post(request):
 У шаблоні виводиш помилки поля поряд із самим полем. `{{ form.non_field_errors }}` показує помилки з `clean()`, що не привʼязані до конкретного поля:
 
 ```html
+{# templates/blog/create.html #}
 <form method="post">
   {% csrf_token %}
 

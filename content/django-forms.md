@@ -139,6 +139,7 @@ class OrderForm(forms.Form):
 
 > <i class="bi bi-info-circle"></i> У `ModelForm` віджети перевизначають у `Meta.widgets`:
 > ```python
+> # blog/forms.py
 > class ArticleForm(forms.ModelForm):
 >     class Meta:
 >         model = Article

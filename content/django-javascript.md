@@ -14,8 +14,6 @@
 | Що вміє | БД, логіка, рендер HTML, авторизація | реакція на кліки/введення, зміна сторінки на льоту |
 | Чого НЕ вміє | змінити сторінку без перезавантаження | зайти в БД, зробити щось «секретне» безпечно |
 
-> <i class="bi bi-lightbulb"></i> Аналогія: Django — це **кухня**, що готує й видає готову страву (сторінку). JavaScript — це **офіціант у залі**: він реагує на клієнта тут і зараз (долив води, підсунув стілець), не бігаючи на кухню щоразу. Коли ж треба «нову страву» (дані з БД) — офіціант усе одно йде на кухню (робить запит до Django).
-
 Ключова думка: усе, що потребує **миттєвої реакції в браузері без перезавантаження**, — це робота JS, а не Django.
 
 ## Коли JS потрібен, а коли — ні
@@ -41,6 +39,7 @@
 JS-файл — це **статика**, тож усе за правилами уроку «Статика»:
 
 ```html
+{# templates/_layouts/base.html #}
 {% load static %}
 <script src="{% static 'js/app.js' %}" defer></script>
 ```
@@ -56,6 +55,7 @@ JS-файл — це **статика**, тож усе за правилами �
 Найпростіший випадок: JS лише перемикає клас, сервер не задіяний.
 
 ```html
+{# templates/_layouts/header.html #}
 <button onclick="document.getElementById('menu').classList.toggle('hidden')">☰ Меню</button>
 <nav id="menu" class="hidden">...</nav>
 ```
@@ -63,6 +63,7 @@ JS-файл — це **статика**, тож усе за правилами �
 ### 2. Підтвердження перед видаленням
 
 ```html
+{# templates/blog/post_detail.html #}
 <form method="post" action="{% url 'post_delete' post.id %}"
       onsubmit="return confirm('Точно видалити статтю?')">
     {% csrf_token %}
@@ -79,7 +80,9 @@ JS-файл — це **статика**, тож усе за правилами �
 **View у Django** повертає не HTML, а JSON:
 
 ```python
+# blog/views.py
 from django.http import JsonResponse
+
 
 def toggle_like(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
@@ -90,6 +93,7 @@ def toggle_like(request, post_id):
 **JS у шаблоні** робить `fetch` і обробляє відповідь:
 
 ```html
+{# templates/blog/post_detail.html #}
 <button id="like" data-url="{% url 'toggle_like' post.id %}">♡</button>
 
 <script>
@@ -123,6 +127,7 @@ def movie_search(request):
 ```
 
 ```html
+{# templates/cinema/movie_list.html #}
 <input id="q" placeholder="Пошук фільму…">
 <ul id="results"></ul>
 
@@ -151,11 +156,13 @@ document.getElementById('q').addEventListener('input', async (e) => {
 
 ## Типові помилки / Нюанси
 
-> <i class="bi bi-exclamation-triangle"></i> Забути CSRF-токен у `fetch`-POST → **403 Forbidden**. Це помилка №1 у новачків з AJAX у Django.
-
-> <i class="bi bi-exclamation-triangle"></i> Не клади в JS перевірки безпеки чи секрети — код у браузері **відкритий** кожному. Валідацію й права **завжди** дублюй/роби на сервері (у Django). JS — лише про зручність, не про захист.
-
-> <i class="bi bi-info-circle"></i> Скрипт із `defer` або перед `</body>` — інакше JS може виконатись раніше, ніж елемент з'явиться в DOM, і `getElementById` поверне `null`.
+| Що не так | Наслідок і як правильно |
+|---|---|
+| POST через `fetch` без CSRF-токена | Django відповідає 403; токен передають у заголовку `X-CSRFToken` |
+| Перевірки прав і сум у браузері | Код відкритий і змінюється з консолі; рішення ухвалює лише сервер |
+| Скрипт підключено без `defer` і вище за розмітку | `getElementById` повертає `null`, обробники не навішуються |
+| Первинний вміст сторінки завантажується через AJAX | Сторінка спершу показує порожнечу, гірше індексується й довше відкривається |
+| JavaScript там, де достатньо форми й `redirect` | Зайвий код і додаткові стани помилок на рівному місці |
 
 ## Підсумок
 

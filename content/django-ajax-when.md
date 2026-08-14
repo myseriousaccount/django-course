@@ -6,15 +6,13 @@
 
 AJAX — це **не «спосіб робити запити до бази даних»**. До бази звертається Django-**view** через ORM — і при звичайному завантаженні сторінки, і при AJAX-запиті. Тобто база тут узагалі ні до чого: різниця не в ній.
 
-<i class="bi bi-lightbulb"></i> Уяви офіціанта. Він однаково ходить на кухню по твоє замовлення — і коли ти прийшов уперше, і коли догукав його вже за столиком. «Кухня» (БД) працює однаково. Різниця лише в тому, **встав ти з-за столика чи ні**. AJAX — це якраз про «не вставати».
-
 ## Що таке AJAX насправді
 
 > **AJAX** — це спосіб **звернутися до сервера без перезавантаження сторінки** й оновити лише її частину. Ключове слово тут — «без перезавантаження».
 
-**Як це працює.** Замість того щоб браузер завантажив нову сторінку цілком, JavaScript тихо надсилає запит у фоні, отримує невелику відповідь і підставляє її в потрібне місце — решта сторінки лишається на екрані незмінною.
+Замість того щоб браузер завантажив нову сторінку цілком, JavaScript тихо надсилає запит у фоні, отримує невелику відповідь і підставляє її в потрібне місце — решта сторінки лишається на екрані незмінною.
 
-**Навіщо.** Щоб дія відчувалася миттєвою й не «мигала»: користувач лишається там, де був, а оновлюється тільки той шматочок, який реально змінився.
+Щоб дія відчувалася миттєвою й не «мигала»: користувач лишається там, де був, а оновлюється тільки той шматочок, який реально змінився.
 
 ## Порівняння: звичайний запит vs AJAX
 
@@ -62,7 +60,9 @@ AJAX обирають з іншої причини: коли ти **не хоч�
 **Крок 1. View, що повертає JSON.** Замість HTML-сторінки він віддає список знайдених книг у форматі JSON.
 
 ```python
+# library/views.py
 from django.http import JsonResponse
+
 from .models import Book
 
 def search_books(request):
@@ -78,12 +78,14 @@ def search_books(request):
 **Крок 2. Маршрут** у `urls.py`:
 
 ```python
+# library/urls.py
 path("books/search/", views.search_books, name="search_books"),
 ```
 
 **Крок 3. JavaScript у шаблоні**, що читає поле й вставляє результати:
 
 ```html
+{# templates/library/book_list.html #}
 <input type="text" id="search" placeholder="Пошук книг...">
 <ul id="results"></ul>
 
@@ -113,6 +115,7 @@ path("books/search/", views.search_books, name="search_books"),
 Порівняй із дією, що **змінює** дані, — «поставити лайк статті» в блозі. Це вже POST, і тут токен обов'язковий:
 
 ```javascript
+// static/js/blog.js
 fetch(`/posts/42/like/`, {
     method: "POST",
     headers: { "X-CSRFToken": csrftoken },
@@ -125,6 +128,7 @@ fetch(`/posts/42/like/`, {
 ```
 
 ```python
+# blog/views.py
 def toggle_like(request, post_id):
     post = Post.objects.get(pk=post_id)
     # ... логіка додавання/зняття лайка через ORM ...
@@ -149,7 +153,9 @@ View повертає «чисті дані» (`JsonResponse`), а зібрат�
 View рендерить маленький шаблон і повертає **вже готовий шматок HTML**, а JavaScript просто вставляє його як є:
 
 ```python
+# library/views.py
 from django.shortcuts import render
+
 
 def search_books(request):
     query = request.GET.get("q", "")
@@ -158,6 +164,7 @@ def search_books(request):
 ```
 
 ```javascript
+// static/js/library.js
 fetch(`/books/search/?q=${encodeURIComponent(input.value)}`)
     .then((response) => response.text())          // .text(), не .json()!
     .then((html) => {
@@ -177,12 +184,14 @@ fetch(`/books/search/?q=${encodeURIComponent(input.value)}`)
 **1. Прочитати дані (GET).** Токен не потрібен, параметри йдуть у рядку адреси.
 
 ```javascript
+// static/js/cinema.js
 fetch(`/movies/search/?q=${encodeURIComponent(text)}`)
     .then(r => r.json())
     .then(data => { /* показати results */ });
 ```
 
 ```python
+# cinema/views.py
 def movie_search(request):
     q = request.GET.get('q', '')                       # ← з рядка адреси
     movies = Movie.objects.filter(title__icontains=q)[:10]
@@ -192,6 +201,7 @@ def movie_search(request):
 **2. Створити запис (POST).** Токен обов'язковий, дані — у тілі запиту.
 
 ```javascript
+// static/js/library.js
 fetch('/library/shelf/add/', {
     method: 'POST',
     headers: { 'X-CSRFToken': csrftoken },
@@ -202,6 +212,7 @@ fetch('/library/shelf/add/', {
 ```
 
 ```python
+# library/views.py
 @require_POST
 def shelf_add(request):
     book_id = request.POST.get('book_id')               # ← з тіла запиту
@@ -213,6 +224,7 @@ def shelf_add(request):
 **3. Оновити запис (POST).** Те саме, але замість створення — зміна наявного об'єкта.
 
 ```javascript
+// static/js/school.js
 fetch(`/school/lessons/${lessonId}/rename/`, {
     method: 'POST',
     headers: { 'X-CSRFToken': csrftoken },
@@ -223,6 +235,7 @@ fetch(`/school/lessons/${lessonId}/rename/`, {
 ```
 
 ```python
+# school/views.py
 @require_POST
 def lesson_rename(request, lesson_id):
     lesson = get_object_or_404(Lesson, pk=lesson_id, teacher=request.user)
@@ -234,6 +247,7 @@ def lesson_rename(request, lesson_id):
 **4. Видалити запис (POST).** Так, саме POST — не GET, навіть якщо це «видалення за посиланням».
 
 ```javascript
+// static/js/blog.js
 fetch(`/blog/comments/${commentId}/delete/`, {
     method: 'POST',
     headers: { 'X-CSRFToken': csrftoken },
@@ -243,6 +257,7 @@ fetch(`/blog/comments/${commentId}/delete/`, {
 ```
 
 ```python
+# blog/views.py
 @require_POST
 def comment_delete(request, comment_id):
     comment = get_object_or_404(Comment, pk=comment_id, author=request.user)
@@ -270,6 +285,7 @@ def comment_delete(request, comment_id):
 Важливий наголос: AJAX **нічого не змінює** в тому, хто має право на дію. Перевіряти права, автентифікацію й коректність даних мусить **view** — так само, як для звичайного запиту.
 
 ```python
+# blog/views.py
 from django.contrib.auth.decorators import login_required
 
 @login_required
@@ -283,7 +299,7 @@ AJAX-запит — це такий самий HTTP-запит, який буд�
 
 ## Коли НЕ треба AJAX
 
-**Навіщо.** Щоб не ускладнювати те, що прекрасно працює звичайним способом:
+Щоб не ускладнювати те, що прекрасно працює звичайним способом:
 
 - **звичайна навігація між сторінками** — перехід на сторінку книги чи статті це просте посилання `<a href>`, не AJAX;
 - **звичайні форми, де перезавантаження нормальне** — реєстрація, оформлення замовлення: перейти на нову сторінку тут логічно;
@@ -293,12 +309,15 @@ AJAX-запит — це такий самий HTTP-запит, який буд�
 
 ## Типові помилки / Нюанси
 
-- **Робити AJAX там, де досить звичайного посилання чи форми.** Перехід на іншу сторінку — це `<a href>` або `redirect`, а не fetch. AJAX тут лише додає коду й багів на рівному місці.
-- **Думати, що AJAX «швидший доступ до БД».** Ні: база та сама, view та сама, ORM та сама. AJAX не прискорює запит до БД — він лише прибирає перезавантаження сторінки.
-- **Забути CSRF-токен у POST.** Найчастіша причина 403 при першому AJAX-запиті. GET токена не потребує, POST — обов'язково.
-- **Плутати `.json()` і `.text()`.** Якщо view повертає JSON — читаєш `response.json()`; якщо готовий HTML-фрагмент — `response.text()`. Переплутаєш — отримаєш помилку розбору.
-- **Покладатися на «сховану» кнопку замість перевірки у view.** Приховати елемент в інтерфейсі — не захист. Права перевіряє **сервер**, бо AJAX-запит легко підробити вручну.
-- **Тягнути AJAX-ом первинний контент.** Те, що видно одразу при відкритті сторінки, має рендерити Django-шаблон. AJAX — для того, що змінюється **після** дії користувача.
+| Що не так | Наслідок і як правильно |
+|---|---|
+| AJAX там, де достатньо посилання чи форми | Зайвий код і нові стани помилок; перехід на іншу сторінку — це `<a href>` або `redirect` |
+| Уявлення, що AJAX «швидше працює з базою» | Запит до бази однаковий; AJAX прибирає лише перезавантаження сторінки |
+| POST без CSRF-токена | 403 при першому ж запиті |
+| Плутати `.json()` і `.text()` | Помилка розбору: тип читання має відповідати тому, що повернула view |
+| Права перевіряються лише приховуванням кнопки | Запит легко надіслати вручну; перевірка живе у view |
+| Первинний вміст сторінки тягнеться AJAX-ом | Порожня сторінка на старті й зайвий запит |
+| Немає обробки помилки на фронті | При 403 чи 500 користувач бачить, що «нічого не сталося» |
 
 ## Підсумок
 

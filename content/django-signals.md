@@ -101,6 +101,7 @@ def create_profile(sender, instance, created, **kwargs):
 Магазин: коли створюється `OrderItem`, зменшуємо залишок товару.
 
 ```python
+# shop/signals.py
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import OrderItem

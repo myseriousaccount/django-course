@@ -206,6 +206,7 @@ def my_orders(request):
 Декоратор ставиться над view-функцією:
 
 ```python
+# blog/views.py
 from django.contrib.auth.decorators import login_required
 
 @login_required
@@ -221,6 +222,7 @@ def write_review(request):
 Для class-based views замість декоратора використовують домішку (mixin) `LoginRequiredMixin`. Її ставлять **першою** в списку батьків:
 
 ```python
+# blog/views.py
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import CreateView
 from .models import Order

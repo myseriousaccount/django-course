@@ -95,6 +95,7 @@ class BookAdmin(admin.ModelAdmin):
 У `list_display` можна класти не лише поля моделі, а й **метод** `ModelAdmin` — так виводять похідні значення:
 
 ```python
+# blog/admin.py
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = ("title", "author", "short_body", "is_published")
@@ -139,6 +140,7 @@ class MovieAdmin(admin.ModelAdmin):
 Коли полів багато, їх групують у секції з заголовками через `fieldsets`. Це заміна простому `fields`:
 
 ```python
+# cinema/admin.py
 @admin.register(Movie)
 class MovieAdmin(admin.ModelAdmin):
     fieldsets = (
@@ -216,7 +218,7 @@ class BookAdmin(admin.ModelAdmin):
 
 Корисні опції inline: `extra` (порожні рядки), `max_num` (максимум записів), `min_num` (мінімум), `can_delete` (чи дозволити видалення), `show_change_link` (посилання на повну сторінку об'єкта).
 
-Пов'язані дані природно редагувати разом. Уяви альтернативу: додати розділ = зберегти книгу, піти в окремий список розділів, створити розділ, вручну вибрати книгу зі списку. `inlines` прибирають усю цю рутину.
+Пов'язані дані редагують разом. Без цього кожен дочірній запис довелося б створювати окремою сторінкою, щоразу обираючи батьківський об'єкт зі списку.
 
 ## Дії над списком (`actions`)
 
@@ -225,6 +227,7 @@ class BookAdmin(admin.ModelAdmin):
 Класика — «опублікувати позначені». У блозі це виглядає так:
 
 ```python
+# blog/admin.py
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = ("title", "author", "is_published")
