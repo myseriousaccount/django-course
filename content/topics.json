@@ -118,8 +118,16 @@
       "summary": "forms.Form проти ModelForm, cleaned_data, is_valid(), валідація clean_*, рендер у шаблоні й збереження через form.save()." },
 
     { "id": "django-validation", "section": "forms", "icon": "bi-check2-circle",
-      "title": "Валідація",
-      "summary": "Чи треба JS-валідація для логіна, чи повторювати перевірки у view. Золоте правило: сервер валідує ЗАВЖДИ, клієнт лише для UX. HTML5 + Django Forms." },
+      "title": "Валідація: клієнт і сервер",
+      "summary": "Що гарантує кожен рівень перевірки, чому модель не валідує себе сама і як перевіряти дані без форми: ручні if, full_clean(), validate_password()." },
+
+    { "id": "django-form-validation", "section": "forms", "icon": "bi-ui-checks",
+      "title": "Валідація у формах",
+      "summary": "Чотири механізми форми в порядку виконання: validators, clean_<field>(), clean(), паролі. Перевірка файлів і виведення помилок у шаблоні." },
+
+    { "id": "django-registration-example", "section": "forms", "icon": "bi-person-plus",
+      "title": "Наскрізний приклад: реєстрація",
+      "summary": "Повний стек однієї форми: модель, форма з хешуванням пароля, маршрути, view, шаблон, JavaScript. Хто за що відповідає на кожному рівні." },
 
     { "id": "django-regex", "section": "forms", "icon": "bi-braces-asterisk",
       "title": "Регулярні вирази (regex)",
