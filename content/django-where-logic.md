@@ -134,6 +134,69 @@ class Book(models.Model):
 # у view: Book.objects.available()  замість  Book.objects.filter(copies_left__gt=0)
 ```
 
+### Методи, що повертають значення
+
+Методи менеджера бувають двох видів. Перший повертає **набір** — такі ланцюжаться далі (`published().by_author(user)`). Другий повертає **готове значення** — суму, кількість, середню оцінку; на ньому ланцюжок закінчується.
+
+```python
+# carts/models.py
+from decimal import Decimal
+
+from django.db import models
+from django.db.models import DecimalField, F, Sum
+
+
+class CartItemQuerySet(models.QuerySet):
+    def for_user(self, user):                      # повертає набір → ланцюжиться
+        return self.filter(user=user).select_related('product')
+
+    def total(self):                               # повертає число → завершує ланцюжок
+        result = self.aggregate(
+            total=Sum(F('product__price') * F('quantity'), output_field=DecimalField()),
+        )
+        return result['total'] or Decimal('0.00')
+
+    def items_count(self):
+        return self.aggregate(n=Sum('quantity'))['n'] or 0
+
+
+class CartItem(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    objects = CartItemQuerySet.as_manager()
+```
+
+```python
+# carts/views.py
+items = CartItem.objects.for_user(request.user)
+total = items.total()             # одна сума, порахована базою
+count = items.items_count()       # кількість штук, а не рядків
+```
+
+Виграш видно в порівнянні з циклом у view: `Sum(F('product__price') * F('quantity'))` перетворюється на один SQL-запит, який множить і додає на боці бази. Цикл же завантажує всі рядки в пам'ять, звертається до `item.product` на кожній ітерації (N+1 запитів) і легко губить `quantity`.
+
+> <i class="bi bi-info-circle"></i> `aggregate()` повертає словник, тому результат дістають за ключем. Якщо рядків немає, значення буде `None` — звідси `or Decimal('0.00')` і `or 0`, інакше сторінка кошика впаде на порожньому кошику.
+
+### QuerySet чи Manager
+
+`QuerySet.as_manager()` — сучасний спосіб: методи доступні і на `Model.objects`, і на будь-якому проміжному наборі, тому ланцюжки працюють. Окремий клас `models.Manager` потрібен рідше — коли метод не стосується вибірки взагалі (наприклад, створює об'єкт за складними правилами) або коли треба змінити базовий набір для всієї моделі:
+
+```python
+# blog/models.py
+class PublishedManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_published=True)
+
+
+class Post(models.Model):
+    objects = models.Manager()          # стандартний, бачить усе
+    published = PublishedManager()      # додатковий, лише опубліковані
+```
+
+> <i class="bi bi-exclamation-triangle"></i> Менеджер, оголошений першим, стає типовим для моделі — його використовують адмінка й пов'язані об'єкти. Якщо першим поставити менеджер із фільтром, частина записів «зникне» з адмін-панелі. Тому звужені набори додають **другим** ім'ям, лишаючи `objects` повним.
+
 ## Рішення 3: сервісний модуль (логіка між кількома моделями)
 
 **Сервісний модуль** (`services.py`) — звичайний файл у твоєму app, куди виносять логіку, що зачіпає **кілька моделей** одразу.
