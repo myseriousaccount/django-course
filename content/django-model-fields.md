@@ -152,6 +152,32 @@ class Profile(models.Model):
 
 > <i class="bi bi-info-circle"></i> Для будь-якого зв'язку з користувачем використовують `settings.AUTH_USER_MODEL`, а не прямий імпорт `User`: проєкт може перейти на власну модель користувача, і код лишиться робочим.
 
+## Унікальність
+
+`unique=True` робить унікальним **одне** поле:
+
+```python
+# library/models.py
+isbn = models.CharField(max_length=13, unique=True)
+```
+
+Коли унікальною має бути **комбінація** полів (один відгук на товар від одного користувача, один рядок кошика на пару «користувач + товар»), використовують `UniqueConstraint` у `Meta`:
+
+```python
+# carts/models.py
+class CartItem(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'product'], name='unique_cart_item'),
+        ]
+```
+
+Обидва варіанти перетворюються на обмеження в базі, тому діють і при прямому `create()`. Детальніше про `UniqueConstraint`, `CheckConstraint`, умовну унікальність і обробку `IntegrityError` — в уроці «Створення моделі», розділ «Обмеження на рівні бази».
+
 ## Індекси
 
 ```python

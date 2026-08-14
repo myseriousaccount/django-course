@@ -321,19 +321,93 @@ author = models.ForeignKey(
 
 ## Обмеження на рівні бази
 
+Обмеження описують у `Meta.constraints`. На відміну від валідаторів, вони перетворюються на правила самої бази, тому діють навіть при прямому `objects.create()` і при паралельних запитах.
+
 ```python
 # cinema/models.py
+class Review(models.Model):
+    movie = models.ForeignKey('Movie', on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    rating = models.PositiveSmallIntegerField()
+
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['movie', 'user'], name='unique_review'),
+            models.UniqueConstraint(fields=['movie', 'user'], name='unique_review_per_user_movie'),
             models.CheckConstraint(
                 condition=models.Q(rating__gte=1) & models.Q(rating__lte=10),
-                name='rating_range',
+                name='review_rating_range',
             ),
         ]
 ```
 
-`UniqueConstraint` — сучасна заміна `unique_together`, `CheckConstraint` описує умову-перевірку. Обидва перетворюються на обмеження в самій базі, тому діють навіть при прямому `create()` і при паралельних запитах, коли перевірка в Python може не спрацювати.
+- **`UniqueConstraint`** забороняє повтор комбінації полів. Для одного поля достатньо `unique=True`, для пари й більше — саме цей клас.
+- **`CheckConstraint`** описує умову, якій мусить відповідати рядок. Умову задають об'єктом `Q` в аргументі `condition`.
+- **`name`** має бути унікальним у межах усієї бази, а не лише моделі. Тому в ім'я включають модель або поля: `unique_cart_item`, `review_rating_range`.
+
+Обмеження — частина схеми, тому після їх додавання потрібна міграція:
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### Що відбувається при порушенні
+
+Спроба записати дублікат піднімає `IntegrityError` — це виняток рівня бази, і сторінка впаде з помилкою 500, якщо його не передбачити. Тому в коді або уникають ситуації, або обробляють виняток:
+
+```python
+# carts/views.py — штатний шлях: не створювати дублікат узагалі
+item, created = CartItem.objects.get_or_create(user=request.user, product=product)
+if not created:
+    item.quantity += 1
+    item.save(update_fields=['quantity'])
+```
+
+```python
+# carts/views.py — якщо дублікат усе ж можливий (паралельні запити)
+from django.db import IntegrityError
+
+try:
+    CartItem.objects.create(user=request.user, product=product)
+except IntegrityError:
+    ...  # рядок уже існує — просто оновлюємо кількість
+```
+
+Форми ловлять порушення раніше: `full_clean()` перевіряє й обмеження теж, тому `ModelForm` покаже зрозумілу помилку поля замість 500. Текст можна задати самому:
+
+```python
+# cinema/models.py
+models.UniqueConstraint(
+    fields=['movie', 'user'],
+    name='unique_review_per_user_movie',
+    violation_error_message='Ви вже залишали рецензію на цей фільм.',
+)
+```
+
+### Умовна унікальність
+
+Обмеження може діяти не на всі рядки, а лише на ті, що відповідають умові. Типовий випадок — «активним може бути лише один запис»:
+
+```python
+# shop/models.py
+class Discount(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    percent = models.PositiveSmallIntegerField()
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['product'],
+                condition=models.Q(is_active=True),
+                name='one_active_discount_per_product',
+            ),
+        ]
+```
+
+Тепер у товару може бути скільки завгодно старих знижок і лише одна активна.
+
+> <i class="bi bi-info-circle"></i> `unique_together` — старіший запис того самого, що робить `UniqueConstraint`. У новому коді документація радить `constraints`, бо вони підтримують умови, власні повідомлення й перевірку виразів.
 
 ## Практики, які варто закласти одразу
 
