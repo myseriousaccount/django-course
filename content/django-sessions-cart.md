@@ -1,6 +1,6 @@
 # Сесії та кошик
 
-HTTP не має пам'яті: кожен запит для сервера — наче перший, він сам по собі не знає, що це «та сама» користувачка, що заходила хвилину тому. Сесії дають серверу цю пам'ять. Цей урок пояснює, що таке сесія в Django, як працювати з `request.session` як зі словником і як на цьому побудувати класику — **кошик покупок**. Приклади з магазину, але механізм універсальний.
+HTTP не зберігає стану: кожен запит для сервера самостійний. Сесія дає пам'ять між запитами — Django кладе в cookie лише ідентифікатор, а дані тримає на сервері. Урок про роботу з `request.session` і про типовий приклад її застосування — кошик.
 
 ## Що таке сесія
 
@@ -20,6 +20,7 @@ HTTP не має пам'яті: кожен запит для сервера — 
 Django дає тобі сесію просто як словникоподібний об'єкт `request.session`. Працюєш із ним звично:
 
 ```python
+# shop/views.py
 def demo(request):
     request.session['theme'] = 'dark'          # записати
     theme = request.session.get('theme', 'light')  # прочитати з дефолтом
@@ -49,6 +50,7 @@ def demo(request):
 **Додати товар** (або збільшити кількість):
 
 ```python
+# carts/views.py
 def cart_add(request, product_id):
     cart = request.session.get('cart', {})     # {} якщо кошика ще нема
     pid = str(product_id)                       # ключі JSON — рядки
@@ -60,6 +62,7 @@ def cart_add(request, product_id):
 **Змінити кількість** на конкретне число:
 
 ```python
+# carts/views.py
 def cart_set(request, product_id):
     cart = request.session.get('cart', {})
     qty = int(request.POST.get('quantity', 1))
@@ -71,6 +74,7 @@ def cart_set(request, product_id):
 **Прибрати один товар:**
 
 ```python
+# carts/views.py
 def cart_remove(request, product_id):
     cart = request.session.get('cart', {})
     cart.pop(str(product_id), None)             # None → не впаде, якщо нема
@@ -81,6 +85,7 @@ def cart_remove(request, product_id):
 **Очистити весь кошик:**
 
 ```python
+# carts/views.py
 def cart_clear(request):
     request.session['cart'] = {}                # або: del request.session['cart']
     return redirect('cart_detail')
@@ -93,6 +98,7 @@ def cart_clear(request):
 **Кількість позицій** для бейджа в шапці:
 
 ```python
+# carts/views.py
 cart = request.session.get('cart', {})
 count = sum(cart.values())          # сума всіх кількостей
 ```
@@ -100,7 +106,9 @@ count = sum(cart.values())          # сума всіх кількостей
 **Підсумкова сторінка** — тут уже дістаємо реальні товари з БД за їхніми id:
 
 ```python
-from .models import Product
+# carts/views.py
+from catalog.models import Product
+
 
 def cart_detail(request):
     cart = request.session.get('cart', {})
@@ -121,7 +129,7 @@ def cart_detail(request):
 Щоб бейдж кошика показувався на **кожній** сторінці, не варто рахувати його в кожній view. Для цього є **context processor** — функція, чиї дані Django автоматично додає в context усіх шаблонів:
 
 ```python
-# shop/context_processors.py
+# carts/context_processors.py
 def cart_counter(request):
     cart = request.session.get('cart', {})
     return {'cart_count': sum(cart.values())}
@@ -130,6 +138,7 @@ def cart_counter(request):
 Підключаєш у `settings.py` → `TEMPLATES` → `OPTIONS` → `context_processors`, дописавши `'shop.context_processors.cart_counter'`. Після цього в будь-якому шаблоні працює:
 
 ```html
+{# templates/_layouts/header.html #}
 <a href="{% url 'cart_detail' %}">Кошик ({{ cart_count }})</a>
 ```
 

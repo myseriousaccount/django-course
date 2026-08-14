@@ -2,11 +2,11 @@
 
 У Django є **два способи** писати views: функціями (function-based views, **FBV**) і класами (class-based views, **CBV**). Ти вже знаєш FBV. Тут розберемо обидва, пройдемо **всі базові generic views** і розберемо, коли який обирати. Це архітектурний вибір для шару **V**. Приклади — з **різних доменів** (блог, магазин, бібліотека, кіно).
 
-## FBV — function-based views (те, що ти вже вмієш)
+## FBV — function-based views
 
 > **FBV (function-based view)** — view, написана як звичайна функція `request → відповідь`.
 
-**Як це працює.** Явно, прозоро, легко читати:
+Явно, прозоро, легко читати:
 
 ```python
 # blog/views.py
@@ -26,7 +26,7 @@ def post_list(request):
 
 > **CBV (class-based view)** — view, написана як клас, де Django бере на себе типову роботу, а ти лише задаєш параметри.
 
-**Як це працює.** View стає класом:
+View стає класом:
 
 ```python
 # shop/views.py
@@ -51,7 +51,7 @@ path('', ProductList.as_view(), name='list')
 
 ## Generic views — готові «заготовки» CBV
 
-**Визначення.** **Generic views** — вбудовані класи CBV під типові задачі. Сила CBV — саме в них.
+**Generic views** — вбудовані класи CBV під типові задачі. Сила CBV — саме в них.
 
 | Generic view | Для чого | Дає у context |
 |---|---|---|
@@ -62,13 +62,12 @@ path('', ProductList.as_view(), name='list')
 | `UpdateView` | форма редагування наявного | `form`, `object` |
 | `DeleteView` | підтвердження й видалення | `object` |
 
-> <i class="bi bi-lightbulb"></i> Аналогія: FBV — це **готувати з нуля** (повний контроль, але багато ручної роботи). CBV/generic — це **напівфабрикат за рецептом**: 90% типової роботи вже зроблено, ти лише додаєш свої штрихи (модель, шаблон, поля).
-
 ### TemplateView — просто сторінка
 
 Коли треба лише віддати шаблон (наприклад «Про нас»), без бази:
 
 ```python
+# pages/views.py
 from django.views.generic import TemplateView
 
 class AboutPage(TemplateView):
@@ -193,15 +192,18 @@ class BookList(ListView):
         return context
 ```
 
-> <i class="bi bi-lightbulb"></i> Тут згадується минулий урок: `Book.objects.filter(...)` краще винести в менеджер (`Book.objects.available()`) — і `get_queryset` стане однорядковим. Класові views добре поєднуються з винесенням логіки в менеджери.
+> <i class="bi bi-info-circle"></i> Фільтр `Book.objects.filter(...)` доречно винести в менеджер (`Book.objects.available()`) — тоді `get_queryset` стає однорядковим, а той самий набір використовується і в інших місцях.
 
 ## Типові помилки / Нюанси
 
-> <i class="bi bi-exclamation-triangle"></i> **Забула `.as_view()`** → `path('', ProductList)` дасть помилку, бо маршрут отримує клас, а не функцію. Завжди `ProductList.as_view()`.
-
-> <i class="bi bi-exclamation-triangle"></i> **`context_object_name`** — за замовчуванням `ListView` кладе список як `object_list`, а `DetailView` — об'єкт як `object`. Якщо в шаблоні пишеш `{{ books }}`, а не задала `context_object_name = 'books'` — буде порожньо.
-
-> <i class="bi bi-exclamation-triangle"></i> **Магія надкласу** — для новачка FBV часто зрозуміліші, бо весь потік видно. Це нормально: не переходь на CBV лише «бо модно», переходь, коли CBV реально економить дублювання.
+| Що не так | Наслідок і як правильно |
+|---|---|
+| У `urls.py` вказано клас без `.as_view()` | `TypeError`: маршрут очікує функцію, а клас нею не є |
+| `LoginRequiredMixin` не першим у списку батьків | Перевірка доступу може не спрацювати через порядок успадкування |
+| Шаблон не названо за конвенцією | `ListView` шукає `<app>/<model>_list.html`, `DetailView` — `<model>_detail.html`; інакше потрібен `template_name` |
+| Змінна в шаблоні не та | Generic-views кладуть об'єкти в `object_list` і `object`; звичне ім'я задають через `context_object_name` |
+| Запит до бази в `get_context_data` без `super()` | Втрачається базовий контекст, і сторінка лишається без основного об'єкта |
+| CBV узято заради «сучасності» | Нестандартний сценарій у класі вимагає перевизначати кілька методів; функція в такому разі коротша й зрозуміліша |
 
 ## Підсумок
 
