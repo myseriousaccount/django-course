@@ -69,6 +69,10 @@
       "title": "Поля та зв'язки",
       "summary": "Типи полів (Char/Text/Decimal/DateTime/Image…), опції (null/blank/default/choices), зв'язки ForeignKey/ManyToMany/OneToOne, Meta та __str__." },
 
+    { "id": "django-model-methods", "section": "data", "icon": "bi-braces-asterisk",
+      "title": "Методи моделі",
+      "summary": "Обчислення про один обʼєкт: @property і метод-дія, чому в шаблоні без дужок, __str__ і get_absolute_url, покроковий перенос коду з view." },
+
     { "id": "django-orm-queries", "section": "data", "icon": "bi-search",
       "title": "Запити до бази (ORM)",
       "summary": "all/filter/get/exclude/order_by/count/exists/first, field lookups (__gte, __icontains), create/update/delete, Q і F: робота з БД без SQL." },
@@ -76,6 +80,10 @@
     { "id": "django-query-optimization", "section": "data", "icon": "bi-speedometer2",
       "title": "Оптимізація запитів",
       "summary": "Проблема N+1, select_related (FK) і prefetch_related (M2M/зворотні зв'язки), only/defer, count vs len. Як не робити сотні зайвих запитів до БД." },
+
+    { "id": "django-managers", "section": "data", "icon": "bi-funnel",
+      "title": "Менеджери й власні вибірки",
+      "summary": "Власний QuerySet і as_manager(): іменовані фільтри, підсумки по набору, що таке self у методі, кілька менеджерів і aggregate як наступний крок." },
 
     { "id": "django-templates", "section": "templates", "icon": "bi-layout-text-window-reverse",
       "title": "Шаблони",
@@ -151,7 +159,7 @@
 
     { "id": "django-where-logic", "section": "architecture", "icon": "bi-lightbulb",
       "title": "Де живе логіка",
-      "summary": "Куди класти бізнес-логіку, щоб views не розпухали; методи моделей, менеджери, сервіси; принцип, що рятує проєкт при рості." },
+      "summary": "Правило вибору місця для логіки: view, метод моделі, менеджер чи окремий модуль. Сценарії між кількома моделями і transaction.atomic." },
 
     { "id": "django-views-fbv-cbv", "section": "architecture", "icon": "bi-diagram-2",
       "title": "Функції чи класи (FBV/CBV)",
