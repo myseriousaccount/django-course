@@ -13,6 +13,10 @@
   ],
   "topics": [
 
+    { "id": "django-troubleshooting", "section": "intro", "icon": "bi-life-preserver",
+      "title": "Куди дивитися: помилки й задачі",
+      "summary": "Довідник: текст помилки або задача — і урок, де розібраний механізм. Плюс порядок дій, коли незрозуміло, з чого почати." },
+
     { "id": "django-what-is", "section": "intro", "icon": "bi-info-circle",
       "title": "Що таке Django",
       "summary": "Full-stack фреймворк, патерн MTV, склад «batteries included» і ознаки проєкту, для якого Django доречний." },

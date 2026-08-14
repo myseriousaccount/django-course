@@ -14,6 +14,7 @@ function app() {
         // ========== СТАН ==========
         topics: [],
         sections: [],
+        query: '',                 // рядок пошуку в сайдбарі
         currentTopic: null,        // id поточної теми (з URL hash)
         currentTopicMeta: null,    // метадані поточної теми
         renderedContent: '',       // зрендерена теорія (HTML з Markdown)
@@ -215,7 +216,21 @@ function app() {
 
         // ========== HELPERS ==========
         topicsBySection(sectionId) {
-            return this.topics.filter(t => t.section === sectionId);
+            const inSection = this.topics.filter(t => t.section === sectionId);
+            const q = this.query.trim().toLowerCase();
+            if (!q) return inSection;
+            return inSection.filter(t =>
+                (t.title + ' ' + (t.summary || '')).toLowerCase().includes(q)
+            );
+        },
+
+        // скільки тем знайшов пошук (для підпису «нічого не знайдено»)
+        get foundCount() {
+            const q = this.query.trim().toLowerCase();
+            if (!q) return this.topics.length;
+            return this.topics.filter(t =>
+                (t.title + ' ' + (t.summary || '')).toLowerCase().includes(q)
+            ).length;
         },
 
         // Іконка теми в сайдбарі: галочка для пройдених, інакше bi-* з topics.json
