@@ -167,11 +167,14 @@ class Product(models.Model):
 
 ## Типові помилки / Нюанси
 
-> <i class="bi bi-exclamation-triangle"></i> `autocomplete_fields` без `search_fields` у цільового admin → помилка `must define search_fields`. Спершу додай пошук у той admin.
-
-> <i class="bi bi-exclamation-triangle"></i> `filter_horizontal` на `ForeignKey` не спрацює — він **лише для ManyToMany**. Для FK бери `autocomplete_fields` або `raw_id_fields`.
-
-> <i class="bi bi-info-circle"></i> Обчислене поле в `readonly_fields` має бути **методом** admin-класу (або моделі) з `@admin.display(description=...)`, інакше в заголовку буде технічна назва.
+| Що не так | Наслідок і як правильно |
+|---|---|
+| `autocomplete_fields` без `search_fields` у цільовому admin | Помилка `must define search_fields` при старті |
+| `filter_horizontal` на `ForeignKey` | Віджет працює лише з `ManyToManyField`; для зв'язку «багато до одного» — `autocomplete_fields` або `raw_id_fields` |
+| Обчислене поле в `readonly_fields` без `@admin.display` | Заголовок колонки показує технічну назву методу |
+| Прев'ю зображення через звичайний рядок | Розмітка екранується й виводиться текстом; потрібен `format_html` |
+| `raw_id_fields` там, де записів десятки | Замість зручного вибору користувач бачить порожнє поле для введення ID |
+| Віджет підмінили, а валідацію не змінили | Інтерфейс дозволяє ввести значення, яке форма потім відхиляє |
 
 ## Підсумок
 
