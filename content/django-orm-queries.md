@@ -201,7 +201,25 @@ except Watchlist.DoesNotExist:
     item = Watchlist.objects.create(user=request.user, movie=movie)
 ```
 
-**`defaults` — поля лише для створення.** Аргументи `get_or_create()` використовуються і для пошуку, і для створення. Якщо якесь поле не має брати участі в пошуку (бо тоді нічого не знайдеться), клади його в `defaults`:
+**`defaults` — поля лише для створення.** Звичайні аргументи `get_or_create()` виконують дві ролі одразу: за ними шукають наявний об'єкт і з них же створюють новий. Тому поле, яке змінюється з часом, у пошуку брати участі не повинно:
+
+```python
+# carts/views.py — ❌ quantity потрапляє в умову пошуку
+item, created = CartItem.objects.get_or_create(user=user, product=product, quantity=1)
+```
+
+Запит перетвориться на `WHERE user=… AND product=… AND quantity=1`. Перший виклик створить рядок, далі кількість зросте до двох — і наступний виклик уже не знайде рядок із `quantity=1`, спробує створити другий і впаде з `IntegrityError` (або створить дублікат, якщо обмеження немає).
+
+```python
+# carts/views.py — ✅ пошук за парою, кількість лише при створенні
+item, created = CartItem.objects.get_or_create(
+    user=user,
+    product=product,
+    defaults={'quantity': 1},
+)
+```
+
+Якщо поле має власне значення за замовчуванням у моделі (`quantity = models.PositiveIntegerField(default=1)`), `defaults` для нього не потрібен зовсім. Він потрібен для полів, обов'язкових при створенні, але без значення за замовчуванням:
 
 ```python
 # python manage.py shell
