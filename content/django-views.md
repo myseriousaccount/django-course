@@ -1,239 +1,193 @@
-# Views: функції-обробники
+# Views
 
-View — це серце логіки в Django. Цей урок пояснює, що таке view, як вона влаштована, які бувають відповіді та як view пов'язана з URL і шаблоном. Приклади навмисно з **різних доменів** (блог, магазин, бібліотека, проста сторінка, API), щоб ти бачила: це універсальний механізм, а не щось прив'язане до конкретного проєкту.
-
-## Що таке view
-
-> **View** — це Python-функція, яка приймає об'єкт запиту (`request`) і **повертає** об'єкт відповіді (HTML-сторінку, редірект, JSON, помилку…). У патерні MTV це шар **V** — логіка між даними (Model) і відображенням (Template).
-
-Найпростіша view взагалі не потребує ні бази, ні шаблону:
+View — функція (або клас), яка приймає об'єкт запиту й повертає об'єкт відповіді. У MTV це шар, що з'єднує дані з відображенням: маршрут вирішує, яка view спрацює, а view — що зробити й що повернути.
 
 ```python
+# pages/views.py
 from django.http import HttpResponse
 
-def hello(request):
-    return HttpResponse('Привіт!')      # приймає request → повертає відповідь
-```
-
-Запам'ятай суть: **приймає `request` → повертає відповідь**. Усе інше — варіації на цю тему.
-
-## Місце view в циклі запиту
-
-View не викликається сама — вона ланка ланцюга:
-
-```
-браузер → URLconf (urls.py) → VIEW → (Model / Template) → відповідь → браузер
-```
-
-Тобто маршрут (`urls.py`) вирішує, **яка** view спрацює на цю адресу, а view вирішує, **що робити** й **що повернути**. Ці дві ролі завжди розділені.
-
-## View завжди приймає `request`
-
-Перший аргумент **кожної** view — об'єкт запиту з усією інформацією про звернення:
-
-| Атрибут | Що містить | Приклад |
-|---|---|---|
-| `request.method` | метод запиту | `'GET'`, `'POST'` |
-| `request.GET` | параметри з адреси (`?...`) | `/search/?q=книга` → `request.GET.get('q')` |
-| `request.POST` | дані надісланої форми | `request.POST.get('email')` |
-| `request.user` | поточний користувач | `request.user.is_authenticated` |
-| `request.FILES` | завантажені файли | `request.FILES['avatar']` |
-| `request.path` | шлях запиту | `'/blog/5/'` |
-
-> <i class="bi bi-info-circle"></i> Паралель із Flask: там `request` глобальний (`from flask import request`), а в Django його **передають аргументом**. Тому `def hello(request):` — не магія: `request` тут звичайний параметр, який Django підставляє сам. Плюс явності: дивишся на сигнатуру — одразу видно, що функція отримує.
-
-## Які бувають відповіді
-
-Головне правило: **будь-яка view мусить повернути об'єкт відповіді**. Але відповіді бувають різні — ось повний набір, кожен на своєму прикладі.
-
-### HttpResponse — простий текст/HTML
-
-```python
-from django.http import HttpResponse
 
 def status(request):
-    return HttpResponse('Сервер працює')          # звичайний текст
+    return HttpResponse('Сервер працює')
 ```
 
-### render — HTML із шаблону (найчастіше)
+Це повноцінна view: жодної бази й шаблону тут не потрібно.
+
+## Об'єкт запиту
+
+Перший аргумент кожної view — `HttpRequest` з усією інформацією про звернення.
+
+| Атрибут | Що містить |
+|---|---|
+| `request.method` | `'GET'`, `'POST'`, `'PATCH'` … |
+| `request.GET` | параметри рядка запиту: `/search/?q=книга` → `request.GET.get('q')` |
+| `request.POST` | дані надісланої форми |
+| `request.FILES` | завантажені файли |
+| `request.user` | поточний користувач або `AnonymousUser` |
+| `request.session` | сесія поточного відвідувача |
+| `request.path` | шлях без домену: `/blog/5/` |
+| `request.headers` | заголовки запиту |
+
+`request.GET` і `request.POST` — не звичайні словники, а `QueryDict`: вони незмінні й уміють повертати кілька значень для одного ключа (`request.GET.getlist('tag')`). Тому дані з них завжди дістають через `.get()` зі значенням за замовчуванням — прямий доступ `request.POST['email']` падає з `MultiValueDictKeyError`, якщо поля немає в запиті.
+
+## Види відповідей
+
+| Що повертаємо | Функція або клас | Коли |
+|---|---|---|
+| HTML зі шаблону | `render()` | звичайна сторінка |
+| перенаправлення | `redirect()` | після успішної дії, зміна адреси |
+| дані для JavaScript | `JsonResponse()` | AJAX, простий API |
+| довільний вміст | `HttpResponse()` | текст, CSV, XML, PDF |
+| помилка «не знайдено» | `raise Http404` | об'єкта не існує |
 
 ```python
+# shop/views.py
+from django.http import Http404, HttpResponse, JsonResponse
+from django.shortcuts import redirect, render
+
+
+def product_page(request, pk):
+    return render(request, 'shop/product.html', {'pk': pk})
+
+
+def moved(request):
+    return redirect('shop:list')
+
+
+def stock_api(request, pk):
+    return JsonResponse({'in_stock': True, 'count': 3})
+
+
+def export(request):
+    return HttpResponse('id;name\n1;Мишка', content_type='text/csv')
+```
+
+Усі варіанти — підкласи або обгортки над `HttpResponse`: view завжди повертає відповідь, різниця лише в її вмісті й заголовках.
+
+## render і контекст
+
+```python
+# library/views.py
 from django.shortcuts import render
 
-def about(request):
-    return render(request, 'pages/about.html', {'year': 2025})
-```
-
-### redirect — перенаправлення
-
-```python
-from django.shortcuts import redirect
-
-def old_page(request):
-    return redirect('home')                        # на маршрут з ім'ям 'home'
-```
-
-### JsonResponse — дані для JavaScript/API
-
-```python
-from django.http import JsonResponse
-
-def api_ping(request):
-    return JsonResponse({'status': 'ok', 'items': 3})
-```
-
-### 404 — коли об'єкта немає
-
-```python
-from django.http import Http404
-
-def secret(request):
-    raise Http404('Нічого тут немає')
-```
-
-> <i class="bi bi-pin-angle"></i> Усі ці класи (`render`, `redirect`, `JsonResponse`, `HttpResponse`) — різновиди одного: **`HttpResponse`**. Тобто view завжди повертає «якусь відповідь», просто в різній формі.
-
-## `render()` детально
-
-`render` — найуживаніший спосіб віддати сторінку. Три аргументи:
-
-```python
-render(request, 'blog/post_list.html', {'posts': posts})
-#       (1)      (2)                     (3)
-```
-
-1. **`request`** — обов'язково передати далі.
-2. **шлях до шаблону** — рядок; Django шукає файл у папках шаблонів. Підпапку за іменем app (`blog/`) пишуть, щоб не сплутати з однойменним шаблоном іншого модуля.
-3. **context** — словник даних; кожен ключ стає змінною в шаблоні (`{{ posts }}`).
-
-## Передавання даних у шаблон (context)
-
-`context` — це «місток» від Python до HTML. Що поклав у словник — те й доступне в шаблоні. Приклади з різних доменів:
-
-```python
-# блог
-def post_detail(request):
-    return render(request, 'blog/post.html', {'title': 'Мій пост', 'views': 128})
-
-# магазин
-def product_page(request):
-    return render(request, 'shop/product.html', {'name': 'Ноутбук', 'price': 25000})
-
-# профіль
-def profile(request):
-    return render(request, 'accounts/profile.html', {'user': request.user})
-```
-
-А в шаблоні:
-
-```html
-<h1>{{ title }}</h1>
-<p>Переглядів: {{ views }}</p>
-```
-
-## View з даними з бази — універсальний патерн
-
-Найчастіша задача — дістати об'єкти з БД і показати. Патерн однаковий для **будь-якої** моделі:
-
-```python
-# бібліотека
-from django.shortcuts import render
 from .models import Book
 
+
 def book_list(request):
-    books = Book.objects.all()                     # дістаємо з БД
+    books = Book.objects.filter(is_available=True)
     return render(request, 'library/book_list.html', {'books': books})
 ```
 
-```python
-# магазин — той самий патерн, інша модель
-from .models import Product
-
-def product_list(request):
-    products = Product.objects.filter(in_stock=True)
-    return render(request, 'shop/product_list.html', {'products': products})
+```html
+{# library/templates/library/book_list.html #}
+{% for book in books %}
+  <li>{{ book.title }}</li>
+{% endfor %}
 ```
 
-Ось тут видно **весь MTV**: **Model** дає дані (`Book`/`Product`), **View** їх дістає, **Template** показує. Це кістяк будь-якої сторінки-списку, байдуже блог це, магазин чи бібліотека.
+Контекст — словник, ключі якого стають іменами змінних у шаблоні. Шлях до шаблону пишуть із префіксом застосунку (`library/`), інакше при однакових іменах Django може взяти файл іншого застосунку.
 
-> <i class="bi bi-lightbulb"></i> Тримай view «тонкою»: її робота — узяти дані й повернути відповідь. Складні обчислення й правила — у моделях (урок «Де живе логіка»).
+Патерн «дістати з бази — передати в шаблон» однаковий для будь-якої моделі; змінюються лише клас і назва шаблону.
 
-## Параметри в адресі приходять у view
+## Аргументи з адреси
 
-Коли в маршруті є динамічна частина, її значення Django передає у view **наступним аргументом** (після `request`):
+Динамічні частини маршруту приходять у view іменованими аргументами після `request`:
 
 ```python
-# urls.py:  path('books/<int:book_id>/', views.book_detail)
+# library/urls.py
+path('books/<int:book_id>/', views.book_detail, name='book_detail')
+```
 
+```python
+# library/views.py
 from django.shortcuts import get_object_or_404, render
 
-def book_detail(request, book_id):                 # book_id з URL
+
+def book_detail(request, book_id):
     book = get_object_or_404(Book, pk=book_id)
     return render(request, 'library/book_detail.html', {'book': book})
 ```
 
-Види конвертерів:
-
-| Конвертер | Приймає | Приклад адреси |
-|---|---|---|
-| `<int:id>` | ціле число | `/books/42/` |
-| `<slug:slug>` | slug (літери-цифри-дефіс) | `/blog/my-first-post/` |
-| `<str:name>` | рядок без `/` | `/user/olena/` |
-| `<uuid:id>` | UUID | `/order/1a2b.../` |
-
-> <i class="bi bi-exclamation-triangle"></i> Ім'я в маршруті й аргумент view мусять **збігатися**: `<int:book_id>` ↔ `book_id`.
+Імена в маршруті й у сигнатурі мають збігатися. Значення вже перетворене конвертером: `<int:book_id>` дає число, а не рядок.
 
 ## GET і POST в одній view
 
-Часто одна view і показує форму (GET), і приймає її (POST). Розрізняють через `request.method`:
-
 ```python
+# pages/views.py
+from django.shortcuts import redirect, render
+
+
 def contact(request):
     if request.method == 'POST':
-        # обробити надіслані дані
-        email = request.POST.get('email')
-        # ... зберегти / надіслати ...
-        return redirect('thanks')
-    # GET — просто показати форму
+        email = request.POST.get('email', '').strip()
+        if email:
+            # ... обробка ...
+            return redirect('thanks')          # Post/Redirect/Get
+
     return render(request, 'pages/contact.html')
 ```
 
-> <i class="bi bi-info-circle"></i> Патерн **Post/Redirect/Get**: після успішного POST завжди роби `redirect`, а не `render`. Інакше при оновленні сторінки браузер повторно надішле форму.
+Після успішного POST повертають `redirect`, а не `render`: інакше оновлення сторінки повторно надішле форму. Повний сценарій дії, що змінює дані — перевірка методу й прав, робота з ORM, вибір між `redirect` і `JsonResponse` — розібраний в уроці «Операції з даними».
 
-> <i class="bi bi-pin-angle"></i> Повний сценарій дії, що змінює дані (перевірка методу й прав, робота з ORM, вибір між `redirect` і `JsonResponse`), розібраний в уроці «Операції з даними».
+## Тонка view
 
-## Функції чи класи?
+Робота view — прийняти запит, звернутися до потрібного шару й повернути відповідь. Обчислення, правила предметної області й складні запити виносять у моделі, менеджери або сервісні модулі:
 
-Усе вище — **function-based views (FBV)**: view як функція. Django має ще **class-based views (CBV)** — view як клас із готовими «заготовками» (`ListView`, `DetailView`). Для типових списків/деталей вони економлять код. Коли який обирати — окремий урок «FBV vs CBV».
+```python
+# ❌ shop/views.py — логіка осіла у view
+def cart_total(request):
+    items = CartItem.objects.filter(user=request.user)
+    total = 0
+    for item in items:
+        price = item.product.price
+        if item.product.discount:
+            price -= price * item.product.discount / 100
+        total += price * item.quantity
+    return render(request, 'shop/cart.html', {'total': total})
+```
 
-## Щоб сторінка запрацювала — чотири речі разом
+```python
+# ✅ shop/views.py — обчислення в моделі, view лишається тонкою
+def cart_total(request):
+    cart = Cart.objects.for_user(request.user)
+    return render(request, 'shop/cart.html', {'total': cart.total()})
+```
 
-View сама по собі сторінки не дасть. Потрібні **чотири** складники:
+Причина не в естетиці: логіку всередині view неможливо перевикористати в команді `manage.py`, в адмінці чи в тесті без імітації HTTP-запиту. Детально — в уроці «Де живе логіка».
 
-1. **view** у `app/views.py` — що робити;
-2. **шаблон** (якщо рендериш HTML) — як показати;
-3. **маршрут** у `app/urls.py` + `include()` у `root/urls.py` — за якою адресою;
-4. запущений **сервер** (`runserver`).
+## Функції чи класи
 
-Забув одне — сторінка не відкриється (частіше: не підключив маршрут → 404, або шаблон не там → `TemplateDoesNotExist`).
+Усе вище — function-based views. Django має ще class-based views із готовими заготовками (`ListView`, `DetailView`, `CreateView`), які скорочують типовий CRUD. Порівняння підходів — в окремому уроці «Функції чи класи».
+
+## Що потрібно, щоб сторінка відкрилась
+
+1. view у `app/views.py`;
+2. маршрут у `app/urls.py`, підключений через `include()` у головному `urls.py`;
+3. шаблон у `app/templates/app/`, якщо повертається HTML;
+4. застосунок в `INSTALLED_APPS`.
+
+Пропущений пункт дає характерну помилку: без маршруту — 404, без шаблону або без реєстрації застосунку — `TemplateDoesNotExist`.
 
 ## Типові помилки / Нюанси
 
-> <i class="bi bi-exclamation-triangle"></i> **Забутий `return`** → `The view didn't return an HttpResponse object. It returned None instead.` View **мусить** повертати відповідь.
-
-> <i class="bi bi-exclamation-triangle"></i> **`TemplateDoesNotExist`** → шлях у `render` неправильний або app не в `INSTALLED_APPS`. Пиши шлях із підпапкою app: `'blog/post_list.html'`.
-
-> <i class="bi bi-exclamation-triangle"></i> **Плутанина ролей** — `urls.py` каже **за якою адресою**, `views.py` каже **що робити**. Не змішуй.
-
-> <i class="bi bi-info-circle"></i> Після POST — `redirect`, а не `render` (Post/Redirect/Get), щоб уникнути повторної відправки форми.
+| Що не так | Наслідок і як правильно |
+|---|---|
+| Немає `return` | `The view didn't return an HttpResponse object. It returned None instead` |
+| Неправильний шлях у `render` | `TemplateDoesNotExist`: шлях пишуть із префіксом застосунку, а сам застосунок має бути в `INSTALLED_APPS` |
+| `request.POST['email']` замість `.get()` | `MultiValueDictKeyError`, якщо поле не надіслали. Використовуй `.get('email', '')` |
+| Очікувати число з `request.GET` | Значення завжди рядок: `'5'`, а не `5`. Перетворення роблять після перевірки |
+| Робота з базою просто у view при кожному запиті | Важкі обчислення й правила виносять у модель або сервіс, інакше їх не перевикористати й не протестувати |
+| `render` після успішного POST | Повторна відправка форми при оновленні сторінки; потрібен `redirect` |
+| Ім'я аргументу не збігається з конвертером | `TypeError: got an unexpected keyword argument` |
 
 ## Підсумок
 
-- **View** — функція `request → відповідь`; шар **V** у MTV; викликається маршрутом.
-- Перший аргумент **завжди** `request`; динамічні частини URL (`<int:id>`) приходять наступними аргументами.
-- Відповіді різні, але всі — це `HttpResponse`: `render` (HTML), `redirect`, `JsonResponse`, `Http404`, простий `HttpResponse`.
-- `render(request, шаблон, context)` — найчастіша; `context` стає змінними шаблону (`{{ }}`).
-- Патерн «дістати з БД → передати в шаблон» однаковий для будь-якої моделі (блог, магазин, бібліотека).
-- Щоб сторінка ожила, потрібні **чотири** речі: view + шаблон + маршрут + сервер.
+- View приймає `request` і повертає відповідь; маршрут визначає, яка саме view спрацює.
+- `request` містить метод, дані форми, файли, користувача, сесію; `GET` і `POST` — це `QueryDict`, з яких значення беруть через `.get()`.
+- Типи відповідей: `render`, `redirect`, `JsonResponse`, `HttpResponse`, `Http404` — усе це різновиди `HttpResponse`.
+- Контекст `render()` стає змінними шаблону; шлях до шаблону пишуть із префіксом застосунку.
+- Динамічні частини адреси приходять іменованими аргументами вже перетвореними конвертером.
+- Після успішного POST — `redirect` (Post/Redirect/Get).
+- View лишають тонкою: предметна логіка живе в моделях, менеджерах і сервісах.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/http/views/" target="_blank" rel="noopener">Writing views <i class="bi bi-box-arrow-up-right"></i></a></div></div>

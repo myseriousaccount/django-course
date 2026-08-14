@@ -1,80 +1,66 @@
-# django.shortcuts: щоденні хелпери
+# Хелпери shortcuts
 
-У кожному view повторюються одні й ті самі дії: знайти об'єкт, віддати шаблон, перенаправити користувача. Модуль `django.shortcuts` — це набір коротких хелперів для цих типових операцій, щоб ти не писала одне й те саме руками щоразу. Це буквально найчастіше вживані функції Django у повсякденному коді. Приклади навмисно з **різних доменів** (блог, магазин, бібліотека, кіно, замовлення), щоб ти бачила: ці хелпери універсальні, а не прив'язані до якоїсь однієї моделі.
+Модуль `django.shortcuts` містить функції для дій, які повторюються майже в кожному view: віддати шаблон, перенаправити, дістати об'єкт або показати 404. Це найчастіше вживані імпорти у щоденному коді.
 
-## render — віддати сторінку
-
-**Визначення.** `render(request, 'app/template.html', context)` бере шаблон, підставляє в нього дані з `context` і повертає готовий об'єкт `HttpResponse` з HTML.
-
-**Як це працює.** Три ключові аргументи:
-
-```python
-from django.shortcuts import render
-from .models import Post
-
-def post_list(request):
-    posts = Post.objects.all()
-    return render(request, 'blog/post_list.html', {'posts': posts})
-```
-
-- `request` — обов'язковий об'єкт запиту (той самий, що приходить у view першим аргументом);
-- `'blog/post_list.html'` — шлях до шаблону (Django шукає його у папках `templates/` застосунків за конвенцією);
-- `{'posts': posts}` — **контекст**: словник даних, доступних усередині шаблону (`{{ posts }}`).
-
-**Повна сигнатура.** У `render` є ще два необов'язкові аргументи, які інколи знадобляться:
+## render
 
 ```python
 render(request, template_name, context=None, content_type=None, status=None)
 ```
 
-- `status` — код відповіді. Наприклад, віддати власну сторінку 404:
-
-  ```python
-  # бібліотека — власна сторінка «книгу не знайдено» з кодом 404
-  def book_missing(request):
-      return render(request, 'library/not_found.html', status=404)
-  ```
-
-- `content_type` — тип вмісту, якщо віддаєш не HTML (наприклад, `'application/xml'` для карти сайту).
-
-**Навіщо.** Без `render` довелося б вручну завантажувати шаблон, рендерити його з контекстом і загортати в `HttpResponse` — три рядки замість одного. `render` робить це за тебе.
-
-> <i class="bi bi-lightbulb"></i> Якщо ти працювала з Flask — це прямий аналог `render_template('page.html', **context)`. Різниця лише в тому, що Django вимагає передати `request` явним першим аргументом (принцип «явність краще за неявність»).
-
-## redirect — перенаправлення
-
-**Визначення.** `redirect()` повертає відповідь із кодом 302 (тимчасове перенаправлення), що каже браузеру: «іди на іншу адресу». Приймає різні типи аргументів і залежно від них поводиться по-різному.
-
-**Як це працює.** Чотири форми виклику — на різних доменах:
+Завантажує шаблон, підставляє в нього дані з контексту й повертає `HttpResponse`.
 
 ```python
+# blog/views.py
+from django.shortcuts import render
+
+from .models import Post
+
+
+def post_list(request):
+    posts = Post.objects.filter(is_published=True)
+    return render(request, 'blog/post_list.html', {'posts': posts})
+```
+
+- `request` передається обов'язково: через нього шаблон отримує доступ до `user`, `messages` та інших змінних із context processors.
+- Шлях до шаблону вказують із префіксом застосунку, щоб уникнути конфлікту однакових імен.
+- Контекст — звичайний словник; ключі стають іменами змінних у шаблоні.
+
+Необов'язкові аргументи потрібні рідше, але саме вони дозволяють віддати нестандартну відповідь:
+
+```python
+# library/views.py
+def not_found(request):
+    return render(request, 'library/not_found.html', status=404)
+
+
+def sitemap(request):
+    return render(request, 'library/sitemap.xml', content_type='application/xml')
+```
+
+## redirect
+
+Повертає відповідь із кодом 302, тобто вказує браузеру перейти на іншу адресу. Приймає чотири види аргументів:
+
+```python
+# shop/views.py
 from django.shortcuts import redirect
 
-# 1) За іменем маршруту (найнадійніше) — після виходу з акаунта
-return redirect('home')
-
-# 2) За іменем + аргументи маршруту — на сторінку конкретного фільму
-return redirect('movie_detail', pk=movie.pk)
-
-# 3) За об'єктом моделі — Django викличе його get_absolute_url()
-return redirect(post)          # на сторінку щойно створеного поста
-
-# 4) За прямим шляхом (рядок, що починається з /)
-return redirect('/orders/')
+return redirect('home')                          # ім'я маршруту
+return redirect('movie_detail', pk=movie.pk)     # ім'я маршруту з аргументами
+return redirect(post)                            # об'єкт із методом get_absolute_url()
+return redirect('/orders/')                      # готовий шлях
 ```
 
-**Постійне перенаправлення.** Якщо адреса змінилася назавжди (стара сторінка більше не існує), передай `permanent=True` — тоді код буде 301, і пошуковики оновлять посилання:
+Форма з іменем маршруту надійніша за рядок: після зміни адреси в `urls.py` код лишається робочим.
+
+Щоб працював варіант із об'єктом, модель має описувати власну адресу:
 
 ```python
-return redirect('new_catalog', permanent=True)   # 301 замість 302
-```
-
-**Навіщо.** Варіант за **іменем маршруту** — найкращий: якщо колись зміниш URL у `urls.py`, посилання не зламається, бо прив'язане до імені, а не до тексту адреси. Це знову ж таки принцип DRY — адреса описана в одному місці.
-
-> <i class="bi bi-info-circle"></i> Щоб працював `redirect(obj)`, у моделі має бути метод `get_absolute_url()`. Він повертає рядок-шлях до сторінки об'єкта — Django викличе його автоматично.
-
-```python
+# blog/models.py
+from django.db import models
 from django.urls import reverse
+
 
 class Post(models.Model):
     title = models.CharField(max_length=200)
@@ -84,120 +70,121 @@ class Post(models.Model):
         return reverse('post_detail', kwargs={'slug': self.slug})
 ```
 
-> <i class="bi bi-info-circle"></i> Пам'ятай про Post/Redirect/Get: після успішного POST (створили замовлення, додали коментар) завжди роби `redirect`, а не `render`. Інакше при оновленні сторінки браузер повторно надішле форму.
+`get_absolute_url()` використовує не лише `redirect()`: його викликає адмін-панель для кнопки «Дивитись на сайті» і generic-views для `success_url`.
 
-## get_object_or_404 — об'єкт або 404
-
-**Визначення.** `get_object_or_404(Model, **умови)` намагається дістати **один** об'єкт; якщо його немає — автоматично віддає сторінку 404 замість того, щоб «впасти» з помилкою 500.
-
-**Як це працює.** Порівняй два підходи на моделі фільму.
-
-**До** — вручну ловимо виняток:
+Для адрес, що змінилися назавжди, передають `permanent=True` — тоді код відповіді 301 і пошукові системи оновлять посилання:
 
 ```python
-from django.http import Http404
-from .models import Movie
-
-def movie_detail(request, pk):
-    try:
-        movie = Movie.objects.get(pk=pk)
-    except Movie.DoesNotExist:
-        raise Http404('Фільм не знайдено')
-    return render(request, 'cinema/movie_detail.html', {'movie': movie})
+return redirect('new_catalog', permanent=True)
 ```
 
-**Після** — той самий результат одним рядком:
+## get_object_or_404
+
+Дістає рівно один об'єкт або віддає сторінку 404 замість помилки 500.
 
 ```python
+# cinema/views.py
 from django.shortcuts import get_object_or_404, render
+
+from .models import Movie
+
 
 def movie_detail(request, pk):
     movie = get_object_or_404(Movie, pk=pk)
     return render(request, 'cinema/movie_detail.html', {'movie': movie})
 ```
 
-**Умови можуть бути будь-які**, не лише `pk`. Наприклад, знайти книгу за слагом, але тільки якщо вона опублікована:
+Без хелпера той самий код виглядав би так:
 
 ```python
-book = get_object_or_404(Book, slug=book_slug, is_published=True)
+# cinema/views.py
+from django.http import Http404
+
+try:
+    movie = Movie.objects.get(pk=pk)
+except Movie.DoesNotExist:
+    raise Http404('Фільм не знайдено')
 ```
 
-**Перший аргумент — модель або QuerySet.** Можна передати вже відфільтрований QuerySet — тоді пошук іде в його межах:
+Умови можуть бути будь-якими, не лише `pk` — і це основний спосіб обмежити доступ до чужих об'єктів:
 
 ```python
-# шукаємо замовлення 42, але лише серед замовлень поточного користувача
-order = get_object_or_404(Order.objects.filter(user=request.user), pk=42)
+# library/views.py
+book = get_object_or_404(Book, slug=slug, is_published=True)
+
+# orders/views.py — замовлення знайдеться, лише якщо належить цьому користувачу
+order = get_object_or_404(Order, pk=pk, user=request.user)
 ```
 
-**Навіщо.** Ситуація «об'єкта немає → покажи 404» трапляється в кожному detail-в'ю. Хелпер прибирає повторюваний `try/except` і робить намір коду очевидним з першого погляду.
-
-> <i class="bi bi-exclamation-triangle"></i> Перший аргумент — це **сама модель або QuerySet**, а не рядок. `get_object_or_404(Movie, pk=pk)`, а не `get_object_or_404('Movie', ...)`.
-
-> <i class="bi bi-exclamation-triangle"></i> Якщо умова знайде **більше одного** об'єкта, `get_object_or_404` кине `MultipleObjectsReturned` (це вже помилка 500, не 404). Фільтруй так, щоб результат був однозначний — за унікальним полем (`pk`, `slug`).
-
-## get_list_or_404 — список або 404
-
-**Визначення.** `get_list_or_404(Model, **умови)` повертає **список** об'єктів за умовою; якщо не знайдено жодного — віддає 404.
-
-**Як це працює.**
+Перший аргумент — модель, менеджер або QuerySet, тому пошук можна вести в межах уже відфільтрованого набору:
 
 ```python
-from django.shortcuts import get_list_or_404
-from .models import Book
+# orders/views.py
+order = get_object_or_404(Order.objects.select_related('user'), pk=pk)
+```
+
+> <i class="bi bi-pin-angle"></i> Повертати 404 замість 403 для чужого об'єкта — свідома практика: сторінка не підтверджує навіть існування запису з таким номером.
+
+## get_list_or_404
+
+Повертає список об'єктів за умовою або 404, якщо не знайдено жодного.
+
+```python
+# library/views.py
+from django.shortcuts import get_list_or_404, render
+
 
 def author_books(request, author_id):
     books = get_list_or_404(Book, author_id=author_id)
     return render(request, 'library/book_list.html', {'books': books})
 ```
 
-Якщо в автора немає жодної книги — користувач отримає 404, а не порожню сторінку. Зверни увагу: повертається **звичайний список**, а не QuerySet, тому далі його вже не «доланцюжиш» фільтрами.
+Результат — звичайний список, а не QuerySet, тому додати `.filter()` чи `.order_by()` після виклику вже не вдасться; сортування задають одразу через `Book.objects.order_by(...)` або `Meta.ordering`.
 
-**Навіщо.** Це `get_object_or_404` для випадку «очікую багато». Різниця з `.filter()`: `filter` спокійно повертає порожній набір, а `get_list_or_404` вважає порожнечу помилкою й піднімає 404.
+Хелпер доречний лише тоді, коли порожній результат означає помилкову адресу. Якщо «поки нічого немає» — нормальний стан, беруть `.filter()` і показують відповідне повідомлення в шаблоні.
 
-> <i class="bi bi-info-circle"></i> Використовуй його лише тоді, коли порожній результат — це справді «нічого не знайдено» (помилка адреси). Якщо порожній список — нормальний стан («у цього автора поки немає книг»), бери звичайний `.filter()` і показуй відповідне повідомлення в шаблоні.
-
-## Де це в проєкті
-
-Ці хелпери — у **кожному view**. Ось той самий «скелет» на трьох різних доменах — намір усюди однаковий:
+## Скелет типового view
 
 ```python
-from django.shortcuts import render, get_object_or_404, redirect
+# shop/views.py
+from django.shortcuts import get_object_or_404, redirect, render
 
-# блог — показати пост
-def post_detail(request, slug):
-    post = get_object_or_404(Post, slug=slug, is_published=True)
-    return render(request, 'blog/post_detail.html', {'post': post})
+from .models import Product
 
-# магазин — додати товар у кошик і повернутися до нього
-def add_to_cart(request, pk):
-    product = get_object_or_404(Product, pk=pk, in_stock=True)
-    request.cart.add(product)
-    return redirect('cart')
 
-# бібліотека — усі книги полиці або 404
-def shelf(request, shelf_id):
-    books = get_list_or_404(Book, shelf_id=shelf_id)
-    return render(request, 'library/shelf.html', {'books': books})
+def product_detail(request, pk):
+    product = get_object_or_404(Product, pk=pk, is_active=True)   # дістати
+    return render(request, 'shop/product_detail.html', {'product': product})  # показати
+
+
+def product_archive(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    product.is_active = False
+    product.save()
+    return redirect('shop:list')                                   # перенаправити
 ```
 
-Хелпери разом покривають майже весь «скелет» звичайного view: дістати дані (`get_object_or_404` / `get_list_or_404`), показати сторінку (`render`), перенаправити після дії (`redirect`).
+Три хелпери покривають більшість звичайних сторінок: дістати дані, показати шаблон, перенаправити після дії.
 
 ## Типові помилки / Нюанси
 
-> <i class="bi bi-exclamation-triangle"></i> **Забутий `return` перед `render`/`redirect`** → `The view didn't return an HttpResponse object`. Ці хелпери лише **створюють** відповідь — повернути її мусиш ти.
-
-> <i class="bi bi-exclamation-triangle"></i> **Рядок замість моделі** у `get_object_or_404('Product', ...)` — перший аргумент завжди сам клас моделі або QuerySet.
-
-> <i class="bi bi-exclamation-triangle"></i> **`get_list_or_404` там, де порожнеча нормальна** — користувач отримає 404 на цілком робочій сторінці. Для «поки нічого немає» бери `.filter()`.
-
-> <i class="bi bi-info-circle"></i> Після POST — завжди `redirect`, а не `render` (Post/Redirect/Get), щоб оновлення сторінки не відправило форму повторно.
+| Що не так | Наслідок і як правильно |
+|---|---|
+| Забутий `return` перед `render` або `redirect` | `The view didn't return an HttpResponse object`: хелпер лише створює відповідь, повернути її має view |
+| Рядок замість моделі: `get_object_or_404('Movie', …)` | Перший аргумент — клас моделі, менеджер або QuerySet |
+| Умова, під яку підпадає кілька об'єктів | `MultipleObjectsReturned` і помилка 500. Фільтруй за унікальним полем або звужуй умову |
+| `get_list_or_404` там, де порожнеча нормальна | Користувач бачить 404 на робочій сторінці. Для «поки порожньо» — `.filter()` |
+| `render` після успішного POST | Оновлення сторінки повторно надішле форму. Після POST — `redirect` |
+| `redirect('/blog/42/')` замість імені маршруту | Посилання ламається після зміни `urls.py`. Передавай ім'я маршруту або об'єкт |
+| Об'єкт дістають без перевірки власника | Чуже замовлення відкривається за прямим посиланням. Умову власності додають прямо у `get_object_or_404` |
 
 ## Підсумок
 
-- **`render(request, шаблон, context, status=...)`** — рендерить шаблон із даними у `HttpResponse`; аналог `render_template` у Flask, але з обов'язковим `request`. `status=` дає власні коди (напр. 404).
-- **`redirect()`** приймає ім'я маршруту, ім'я + аргументи, об'єкт (через `get_absolute_url()`) або шлях; надавай перевагу **імені маршруту**. `permanent=True` → код 301.
-- **`get_object_or_404(Model, **умови)`** замінює ручний `try/except Model.DoesNotExist` і сам віддає 404; перший аргумент — модель або QuerySet, умови будь-які.
-- **`get_list_or_404(Model, **умови)`** — те саме для списку; бери лише коли порожній результат означає помилку.
-- Разом ці хелпери формують «скелет» майже кожного view: дістати → показати → перенаправити.
+- `render(request, шаблон, context, status=…, content_type=…)` — рендер шаблону в `HttpResponse`; `request` обов'язковий, бо через нього працюють context processors.
+- `redirect()` приймає ім'я маршруту, ім'я з аргументами, об'єкт із `get_absolute_url()` або шлях; ім'я маршруту стійкіше за рядок, `permanent=True` дає 301.
+- `get_object_or_404()` замінює `try/except DoesNotExist`; умови довільні, тому саме тут зручно обмежувати доступ за власником.
+- Перший аргумент може бути QuerySet — це дозволяє шукати в межах уже відфільтрованого набору.
+- `get_list_or_404()` повертає список і піднімає 404 на порожньому результаті; для нормальної порожнечі використовують `.filter()`.
+- Разом три хелпери утворюють скелет звичайного view: дістати → показати → перенаправити.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/http/shortcuts/" target="_blank" rel="noopener">Django shortcut functions <i class="bi bi-box-arrow-up-right"></i></a></div></div>
