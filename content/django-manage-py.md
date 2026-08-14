@@ -72,6 +72,7 @@ python manage.py shell
 ```
 
 ```python
+# python manage.py shell
 >>> from blog.models import Post
 >>> Post.objects.count()
 42

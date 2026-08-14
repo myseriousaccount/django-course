@@ -56,6 +56,7 @@ INSTALLED_APPS = [
 Те, що у Flask ти збирала вручну (Flask-Login, хешування, форми логіну), у Django вже готове:
 
 ```python
+# accounts/views.py
 from django.contrib.auth import authenticate, login, logout
 
 # перевірити пару логін/пароль (хешування — усередині)
@@ -143,6 +144,7 @@ def add_review(request, movie_id):
 А в шаблоні (зазвичай у базовому) показуєш чергу повідомлень:
 
 ```html
+{# templates/_layouts/base.html #}
 {% for message in messages %}
   <div class="alert alert-{{ message.tags }}">{{ message }}</div>
 {% endfor %}
@@ -184,7 +186,7 @@ def add_review(request, movie_id):
 Спільнота пише власні apps, які встановлюються як пакети і так само додаються в `INSTALLED_APPS`:
 
 ```python
-# після pip install ...
+# config/settings.py — після pip install ...
 INSTALLED_APPS = [
     ...
     'rest_framework',     # Django REST Framework — API

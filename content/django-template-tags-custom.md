@@ -53,6 +53,7 @@ register = template.Library()
 Функція приймає значення ліворуч від `|` і повертає результат. Другий параметр — необов'язковий аргумент після двокрапки.
 
 ```python
+# catalog/templatetags/shop_extras.py
 from decimal import Decimal, InvalidOperation
 
 @register.filter
@@ -65,6 +66,7 @@ def currency(value, symbol='₴'):
 ```
 
 ```html
+{# catalog/templates/catalog/product.html #}
 {{ product.price|currency }}          {# 25 000 ₴ #}
 {{ product.price|currency:'$' }}      {# 25 000 $ #}
 ```
@@ -77,6 +79,7 @@ def currency(value, symbol='₴'):
 - **`@stringfilter`** гарантує, що на вхід прийде рядок (Django сам зробить перетворення):
 
 ```python
+# blog/templatetags/blog_extras.py
 from django.template.defaultfilters import stringfilter
 
 @register.filter
@@ -90,18 +93,21 @@ def read_time(text):                       # блог
 Повертає обчислене значення, приймає будь-яку кількість аргументів — позиційних і іменованих.
 
 ```python
+# catalog/templatetags/shop_extras.py
 @register.simple_tag
 def discounted(price, percent=0):
     return price - price * percent / 100
 ```
 
 ```html
+{# catalog/templates/catalog/product.html #}
 {% discounted product.price 15 %}
 ```
 
 Результат можна покласти у змінну через `as` і використати нижче:
 
 ```html
+{# catalog/templates/catalog/product.html #}
 {% discounted product.price 15 as final_price %}
 <p>Ціна зі знижкою: {{ final_price|currency }}</p>
 ```
@@ -109,6 +115,7 @@ def discounted(price, percent=0):
 **Доступ до контексту.** З `takes_context=True` першим параметром приходить контекст шаблону — там `request`, `user` та інші змінні:
 
 ```python
+# carts/templatetags/cart_extras.py
 @register.simple_tag(takes_context=True)
 def cart_total(context):
     cart = context['request'].session.get('cart', {})
@@ -116,6 +123,7 @@ def cart_total(context):
 ```
 
 ```html
+{# templates/_layouts/header.html #}
 {% cart_total %}
 ```
 
@@ -124,6 +132,7 @@ def cart_total(context):
 **Блочний варіант.** З Django 5.2 є `@register.simple_block_tag` — тег із вмістом між відкривальним і закривальним тегами. Функція отримує цей вміст першим аргументом:
 
 ```python
+# core/templatetags/ui.py
 from django.utils.html import format_html
 
 @register.simple_block_tag
@@ -132,6 +141,7 @@ def note(content, level='info'):
 ```
 
 ```html
+{# catalog/templates/catalog/product.html #}
 {% note level="warning" %}Товар закінчується{% endnote %}
 ```
 
@@ -140,6 +150,7 @@ def note(content, level='info'):
 Функція повертає **словник**, який стає контекстом окремого шаблону-фрагмента; результат рендера вставляється на місце виклику.
 
 ```python
+# catalog/templatetags/shop_extras.py
 @register.inclusion_tag('catalog/tags/product_card.html')
 def product_card(product, show_price=True):
     return {'product': product, 'show_price': show_price}
@@ -171,6 +182,7 @@ Django автоматично екранує вивід — і фільтрів,
 Правильний спосіб — `format_html()`: він екранує підставлені значення, але лишає твої теги розміткою.
 
 ```python
+# cinema/templatetags/movie_extras.py
 from django.utils.html import format_html
 
 @register.simple_tag
@@ -184,6 +196,7 @@ def stars(rating):                                   # кінотека
 Для фільтрів є ще параметр `is_safe`:
 
 ```python
+# accounts/templatetags/user_extras.py
 @register.filter(is_safe=True)
 def initials(value):                       # "Марія Коваль" → "МК"
     return ''.join(part[0].upper() for part in str(value).split()[:2])

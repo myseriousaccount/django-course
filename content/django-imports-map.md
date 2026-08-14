@@ -23,6 +23,7 @@ Django — це один великий пакет `django`, розкладен�
 ## django.db — моделі й база
 
 ```python
+# school/models.py
 from django.db import models
 
 class Lesson(models.Model):                       # школа
@@ -36,6 +37,7 @@ class Lesson(models.Model):                       # школа
 Рідше, але важливо — транзакції: коли кілька змін мають зберегтися разом або не зберегтися взагалі:
 
 ```python
+# shop/services.py
 from django.db import transaction
 
 with transaction.atomic():        # або обидва записи, або жодного
@@ -46,6 +48,7 @@ with transaction.atomic():        # або обидва записи, або ж�
 ## django.urls — маршрути й зворотні посилання
 
 ```python
+# school/urls.py
 from django.urls import path, include, reverse
 
 path('lessons/<int:pk>/', views.lesson_detail, name='lesson_detail')
@@ -54,6 +57,7 @@ path('lessons/<int:pk>/', views.lesson_detail, name='lesson_detail')
 `reverse()` — це `{% url %}` для Python-коду: збирає адресу за іменем маршруту, щоб не писати шляхи рядками:
 
 ```python
+# school/models.py
 from django.urls import reverse
 
 def get_absolute_url(self):
@@ -65,6 +69,7 @@ def get_absolute_url(self):
 ## django.shortcuts — щоденні хелпери
 
 ```python
+# blog/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 ```
 
@@ -73,6 +78,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 ## django.http — відповіді власноруч
 
 ```python
+# cinema/views.py
 from django.http import JsonResponse, HttpResponse, Http404, HttpResponseForbidden
 ```
 
@@ -85,14 +91,15 @@ from django.http import JsonResponse, HttpResponse, Http404, HttpResponseForbidd
 | `HttpResponseRedirect` | те, що `redirect()` робить зручніше |
 
 ```python
-# кінотека: віддати список нагород фільму для AJAX
+# cinema/views.py — віддати список нагород фільму для AJAX
 return JsonResponse({'awards': list(movie.awards.values('title', 'year'))})
 ```
 
 ## django.forms — форми
 
 ```python
-from django import forms                       # саме так, коротко
+# cinema/forms.py
+from django import forms                       # імпортують саме так
 
 class ReviewForm(forms.Form):
     score = forms.IntegerField(min_value=1, max_value=10)
@@ -108,6 +115,7 @@ class ReviewForm(forms.Form):
 Це не один модуль, а набір готових застосунків. Найуживаніші імпорти:
 
 ```python
+# accounts/views.py
 from django.contrib import admin, messages
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
@@ -129,6 +137,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 ## django.core — валідатори, винятки, пагінація, пошта
 
 ```python
+# library/models.py
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.core.paginator import Paginator
@@ -136,7 +145,7 @@ from django.core.mail import send_mail
 ```
 
 ```python
-# бібліотека: рік видання не може бути з майбутнього
+# library/models.py — рік видання не може бути з майбутнього
 year = models.PositiveIntegerField(validators=[MaxValueValidator(2026)])
 
 # блог: сторінка 20 статей
@@ -148,6 +157,7 @@ paginator = Paginator(Post.objects.all(), 20)
 ## django.views — декоратори й класові views
 
 ```python
+# blog/views.py
 from django.views.decorators.http import require_POST, require_GET, require_http_methods
 from django.views.decorators.cache import cache_page
 from django.views.generic import ListView, DetailView, CreateView
@@ -158,13 +168,14 @@ from django.views.generic import ListView, DetailView, CreateView
 ## django.utils — дрібні помічники
 
 ```python
+# blog/models.py
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.html import escape
 ```
 
 ```python
-# блог: опубліковані статті на зараз
+# blog/views.py — опубліковані статті на зараз
 Post.objects.filter(published_at__lte=timezone.now())
 
 # слаг для URL із назви
@@ -176,6 +187,7 @@ slugify('Тигролови Івана Багряного')     # 'tigrolovi-iva
 ## django.conf — налаштування
 
 ```python
+# core/utils.py
 from django.conf import settings
 
 if settings.DEBUG:

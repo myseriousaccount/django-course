@@ -47,6 +47,7 @@ urlpatterns = [
 ## Анатомія path()
 
 ```python
+# library/urls.py
 path('books/<int:book_id>/', views.book_detail, name='book_detail')
 #     └─ шаблон адреси ─┘     └─ обробник ─┘     └─ ім'я маршруту ─┘
 ```
@@ -135,6 +136,7 @@ urlpatterns = [
 ```
 
 ```html
+{# shop/templates/shop/product_list.html #}
 <a href="{% url 'shop:detail' product.pk %}">{{ product.name }}</a>
 ```
 

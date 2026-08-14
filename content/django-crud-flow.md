@@ -35,6 +35,7 @@
 **Звичайна форма** — браузер сам збирає поля й перезавантажує сторінку:
 
 ```html
+{# blog/templates/blog/post_detail.html #}
 <form method="post" action="{% url 'comment_add' post.id %}">
     {% csrf_token %}
     <textarea name="text" required></textarea>
@@ -45,6 +46,7 @@
 **Кнопка + JS** — сторінка лишається на місці, запит іде фоном:
 
 ```html
+{# cinema/templates/cinema/movie_detail.html #}
 {% csrf_token %}
 <button class="rate-btn" data-movie-id="{{ movie.id }}" data-score="9">Оцінити 9</button>
 ```
@@ -82,6 +84,7 @@ View отримує `request` (усе про запит: метод, дані, �
 **1) Чи це той метод?** Дії, що змінюють дані, приймають лише POST. Найпростіший спосіб — декоратор:
 
 ```python
+# blog/views.py
 from django.views.decorators.http import require_POST
 
 @require_POST
@@ -94,6 +97,7 @@ def comment_add(request, post_id):
 **2) Чи має право цей користувач?**
 
 ```python
+# blog/views.py
 from django.contrib.auth.decorators import login_required
 
 @login_required
@@ -105,6 +109,7 @@ def comment_add(request, post_id):
 А якщо дія стосується чужого об'єкта — перевіряй власника явно:
 
 ```python
+# blog/views.py
 comment = get_object_or_404(Comment, pk=comment_id, author=request.user)
 # чужий коментар просто не знайдеться → 404, і видалити його не вийде
 ```
@@ -112,6 +117,7 @@ comment = get_object_or_404(Comment, pk=comment_id, author=request.user)
 **3) Чи коректні дані?**
 
 ```python
+# blog/views.py
 text = request.POST.get('text', '').strip()
 if not text:
     messages.error(request, 'Коментар не може бути порожнім')
@@ -141,6 +147,7 @@ if not text:
 **Класика — `redirect`.** Після успішного POST завжди перенаправляй, а не рендери сторінку (патерн Post/Redirect/Get):
 
 ```python
+# blog/views.py
 messages.success(request, 'Коментар додано')
 return redirect('post_detail', post_id=post_id)
 ```
@@ -148,6 +155,7 @@ return redirect('post_detail', post_id=post_id)
 **AJAX — `JsonResponse`.** Повертаєш рівно ті дані, які потрібні, щоб оновити шматок сторінки:
 
 ```python
+# blog/views.py
 return JsonResponse({
     'comment_id': comment.id,
     'total': post.comments.count(),
@@ -179,6 +187,7 @@ def comment_add(request, post_id):
 ```
 
 ```html
+{# blog/templates/blog/post_detail.html #}
 <form method="post" action="{% url 'comment_add' post.id %}">
     {% csrf_token %}
     <textarea name="text"></textarea>
@@ -213,6 +222,7 @@ def comment_add_ajax(request, post_id):
 ```
 
 ```js
+// static/js/comments.js
 $('#comment-form').on('submit', function (e) {
     e.preventDefault();
 

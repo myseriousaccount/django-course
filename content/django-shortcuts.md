@@ -5,6 +5,7 @@
 ## render
 
 ```python
+# сигнатура
 render(request, template_name, context=None, content_type=None, status=None)
 ```
 
@@ -75,6 +76,7 @@ class Post(models.Model):
 Для адрес, що змінилися назавжди, передають `permanent=True` — тоді код відповіді 301 і пошукові системи оновлять посилання:
 
 ```python
+# shop/views.py
 return redirect('new_catalog', permanent=True)
 ```
 

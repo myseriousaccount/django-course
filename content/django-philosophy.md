@@ -53,7 +53,7 @@ def post_list(request):        # об'єкт запиту приходить а�
 Проєкт ділиться на застосунки, а всередині — на шари, які не знають деталей одне одного: модель не формує HTML, шаблон не звертається до бази, view з'єднує їх.
 
 ```python
-# ✅ шари розділені
+# blog/views.py — шари розділені
 def post_list(request):
     posts = Post.objects.filter(is_published=True)          # дані
     return render(request, 'blog/post_list.html', {'posts': posts})   # відображення
