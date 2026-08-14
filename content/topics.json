@@ -141,6 +141,10 @@
       "title": "Цикл запиту й middleware",
       "summary": "Повний шлях запиту: Middleware → URLconf → View → Response. Що таке middleware і чому порядок у списку важливий." },
 
+    { "id": "django-crud-flow", "section": "architecture", "icon": "bi-arrow-right-circle",
+      "title": "Операції з даними",
+      "summary": "Шість кроків будь-якої дії: тригер, адреса, view, перевірки, ORM, відповідь. Та сама операція формою і через AJAX, чеклист для власних дій (видалити, змінити кількість)." },
+
     { "id": "django-where-logic", "section": "architecture", "icon": "bi-lightbulb",
       "title": "Де живе логіка",
       "summary": "Куди класти бізнес-логіку, щоб views не розпухали; методи моделей, менеджери, сервіси; принцип, що рятує проєкт при рості." },
@@ -161,13 +165,21 @@
       "title": "Сигнали (signals)",
       "summary": "post_save/pre_save/pre_delete, @receiver: реагувати на події моделі (створити профіль після реєстрації, оновити склад). Коли доречно, а коли краще метод чи сервіс." },
 
+    { "id": "django-imports-map", "section": "architecture", "icon": "bi-signpost-split",
+      "title": "Карта модулів Django",
+      "summary": "Що звідки імпортувати: db, urls, shortcuts, http, forms, contrib, core, utils, conf. Таблиця «задача → імпорт» і пастки на кшталт двох різних CharField." },
+
     { "id": "django-javascript", "section": "frontend", "icon": "bi-filetype-js",
       "title": "JavaScript у Django",
       "summary": "Django рендерить HTML на сервері, JS додає інтерактив у браузері: коли він потрібен (модалки, AJAX/fetch), CSRF-пастка, htmx/Alpine замість гори коду." },
 
+    { "id": "django-ajax-when", "section": "frontend", "icon": "bi-arrow-left-right",
+      "title": "AJAX: коли застосовувати",
+      "summary": "Розвіюємо міф «AJAX для БД». Насправді це запит до сервера без перезавантаження сторінки. Коли варто, коли ні, чотири типи запитів і чеклист написання." },
+
     { "id": "django-frontend-tools", "section": "frontend", "icon": "bi-plugin",
-      "title": "jQuery та інструменти",
-      "summary": "Що таке jQuery і чи потрібна сьогодні, jQuery + Django (AJAX, CSRF), і огляд готових інструментів: Bootstrap, Select2, DataTables, Chart.js, SweetAlert2…" },
+      "title": "jQuery на практиці",
+      "summary": "Як користуватися jQuery: селектори, читання й зміна елементів, рух по дереву, форми, анатомія $.ajax і CSRF. Де закінчується браузер і починається Django." },
 
     { "id": "django-jquery-events", "section": "frontend", "icon": "bi-mouse2",
       "title": "Події DOM: кліки, наведення, прокрутка",
@@ -176,10 +188,6 @@
     { "id": "django-alpine", "section": "frontend", "icon": "bi-triangle",
       "title": "Alpine.js",
       "summary": "«Tailwind для JS»: інтерактив через атрибути (x-data, x-show, @click). Приклади вкладок і модалок на реальному коді цієї платформи, плюс Alpine з Django." },
-
-    { "id": "django-ajax-when", "section": "frontend", "icon": "bi-arrow-left-right",
-      "title": "AJAX: коли застосовувати",
-      "summary": "Розвіюємо міф «AJAX для БД». Насправді це запит до сервера без перезавантаження сторінки. Коли варто, коли ні, правило вибору." },
 
     { "id": "django-testing", "section": "deploy", "icon": "bi-clipboard-check",
       "title": "Тестування",

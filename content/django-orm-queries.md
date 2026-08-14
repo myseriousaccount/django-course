@@ -140,6 +140,83 @@ Product.objects.bulk_create([
 
 > <i class="bi bi-exclamation-triangle"></i> `bulk_create()` **не викликає** метод `save()` моделі й сигнали `pre_save`/`post_save` — якщо в моделі є логіка в `save()`, масове створення її омине.
 
+## get_or_create: створити, лише якщо ще немає
+
+**Визначення.** `get_or_create()` шукає об'єкт за заданими полями, і якщо не знаходить — створює його. Повертає **кортеж із двох значень**: сам об'єкт і прапорець `created` (`True`, якщо щойно створили).
+
+```python
+# кінотека: користувач додає фільм у список "до перегляду"
+item, created = Watchlist.objects.get_or_create(user=request.user, movie=movie)
+
+if created:
+    message = 'Фільм додано до списку'
+else:
+    message = 'Цей фільм уже у вашому списку'
+```
+
+**Навіщо.** Без нього довелося б писати руками те саме в три рядки — і при кожному повторному натисканні кнопки з'являвся б дублікат:
+
+```python
+# ❌ так з'являються дублікати
+Watchlist.objects.create(user=request.user, movie=movie)
+
+# ❌ багатослівний ручний варіант того самого
+try:
+    item = Watchlist.objects.get(user=request.user, movie=movie)
+except Watchlist.DoesNotExist:
+    item = Watchlist.objects.create(user=request.user, movie=movie)
+```
+
+**`defaults` — поля лише для створення.** Аргументи `get_or_create()` використовуються і для пошуку, і для створення. Якщо якесь поле не має брати участі в пошуку (бо тоді нічого не знайдеться), клади його в `defaults`:
+
+```python
+# школа: журнал відвідуваності — шукаємо за учнем і датою,
+# а статус лише проставляємо при створенні запису
+record, created = Attendance.objects.get_or_create(
+    student=student,
+    date=today,
+    defaults={'status': 'present'},      # ← тільки для створення, у пошуку не бере участі
+)
+```
+
+**Лічильник замість дубліката.** Класичний випадок — «додати ще один такий самий»: замість нового рядка збільшуємо кількість у наявному.
+
+```python
+# магазин: повторне "додати в кошик" — не другий рядок, а +1 до кількості
+item, created = CartItem.objects.get_or_create(
+    user=request.user,
+    product=product,
+    defaults={'quantity': 1},
+)
+if not created:
+    item.quantity += 1
+    item.save()
+```
+
+**`update_or_create()`** — брат-близнюк: якщо об'єкт знайдено, оновлює його полями з `defaults`, якщо ні — створює.
+
+```python
+# бібліотека: оцінка книжки — одна на користувача, повторна перезаписує стару
+rating, created = Rating.objects.update_or_create(
+    user=request.user,
+    book=book,
+    defaults={'score': score},           # ← тут defaults ще й оновлює
+)
+```
+
+| Метод | Знайшов | Не знайшов |
+|---|---|---|
+| `get()` | повертає об'єкт | помилка `DoesNotExist` |
+| `create()` | (не шукає) | створює завжди — звідси дублікати |
+| `get_or_create()` | повертає знайдений, `created=False` | створює, `created=True` |
+| `update_or_create()` | оновлює полями `defaults` | створює |
+
+> <i class="bi bi-exclamation-triangle"></i> Забути, що повертається **кортеж**, — помилка номер один: `item = Model.objects.get_or_create(...)` покладе в `item` пару `(об'єкт, True)`, і наступний `item.quantity` впаде. Завжди розпаковуй: `item, created = ...`.
+
+> <i class="bi bi-info-circle"></i> `get_or_create()` не замінює обмеження в базі. Якщо два запити прийдуть одночасно, обидва можуть не знайти запис і створити по одному. Надійний захист — `unique_together` (або `UniqueConstraint`) у `class Meta` моделі: тоді сама база не дозволить дублікат.
+
+> <i class="bi bi-exclamation-triangle"></i> Якщо за умовами пошуку знайдеться **кілька** об'єктів, `get_or_create()` підніме `MultipleObjectsReturned` — так само, як `get()`. Це ознака, що бракує унікального обмеження.
+
 ## Зміна: save, update
 
 **Визначення.** Змінити один об'єкт або цілий набір.
@@ -282,6 +359,7 @@ def post_feed(request):
 - **Field lookups** через `__` (`gte`, `lte`, `range`, `contains`, `icontains`, `in`, `isnull`, дати) задають умову; у межах `.filter()` вони поєднуються через **І**; через `__` можна йти й по зв'язках (`author__country`).
 - QuerySet **лінивий**: ланцюжок фільтрів збирається в один SQL, що виконується лише при зверненні до даних.
 - Запис: `.create()`, конструктор + `.save()`, `bulk_create()`; зміна `obj.save()` / масовий `queryset.update()`; видалення `.delete()` (масові операції — одна SQL-команда, але без сигналів).
+- `get_or_create()` створює, лише якщо об'єкта ще немає, і повертає **кортеж** `(об'єкт, created)`; поля, що не мають брати участі в пошуку, кладуть у `defaults`. `update_or_create()` — те саме, але знайдений об'єкт ще й оновлює. Від дублікатів у базі захищає `unique_together`, а не сам метод.
 - `Q` — умови **АБО** (`|`, `&`, `~`); `F` — посилання на поле в самій БД; `aggregate`/`annotate` — підрахунки на боці бази; `values`/`values_list` — лише потрібні поля.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/db/queries/" target="_blank" rel="noopener">Making queries <i class="bi bi-box-arrow-up-right"></i></a></div></div>

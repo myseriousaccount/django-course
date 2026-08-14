@@ -170,6 +170,101 @@ fetch(`/books/search/?q=${encodeURIComponent(input.value)}`)
 
 > <i class="bi bi-info-circle"></i> Для багатьох задач підхід із HTML-фрагментом простіший, бо не змушує писати розмітку двічі. Саме на ньому побудований інструмент **htmx** — окрема бібліотека, яка дозволяє робити AJAX майже без JavaScript, прямо в атрибутах HTML. Це тема окремого уроку; тут достатньо знати, що такий шлях існує.
 
+## Чотири типи запитів: фронт і бек поруч
+
+Коли зрозуміло, що AJAX тут доречний, лишається питання «як його писати». Насправді варіантів лише чотири — за тим, що саме робить операція. Ось усі, кожен парою: ліворуч браузер, праворуч Django.
+
+**1. Прочитати дані (GET).** Токен не потрібен, параметри йдуть у рядку адреси.
+
+```javascript
+fetch(`/movies/search/?q=${encodeURIComponent(text)}`)
+    .then(r => r.json())
+    .then(data => { /* показати results */ });
+```
+
+```python
+def movie_search(request):
+    q = request.GET.get('q', '')                       # ← з рядка адреси
+    movies = Movie.objects.filter(title__icontains=q)[:10]
+    return JsonResponse({'results': list(movies.values('id', 'title'))})
+```
+
+**2. Створити запис (POST).** Токен обов'язковий, дані — у тілі запиту.
+
+```javascript
+fetch('/library/shelf/add/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrftoken },
+    body: new URLSearchParams({ book_id: bookId }),
+})
+    .then(r => r.json())
+    .then(data => { counter.textContent = data.total; });
+```
+
+```python
+@require_POST
+def shelf_add(request):
+    book_id = request.POST.get('book_id')               # ← з тіла запиту
+    ShelfItem.objects.get_or_create(user=request.user, book_id=book_id)
+    total = ShelfItem.objects.filter(user=request.user).count()
+    return JsonResponse({'total': total})
+```
+
+**3. Оновити запис (POST).** Те саме, але замість створення — зміна наявного об'єкта.
+
+```javascript
+fetch(`/school/lessons/${lessonId}/rename/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrftoken },
+    body: new URLSearchParams({ title: newTitle }),
+})
+    .then(r => r.json())
+    .then(data => { titleEl.textContent = data.title; });
+```
+
+```python
+@require_POST
+def lesson_rename(request, lesson_id):
+    lesson = get_object_or_404(Lesson, pk=lesson_id, teacher=request.user)
+    lesson.title = request.POST.get('title', '').strip()
+    lesson.save()
+    return JsonResponse({'title': lesson.title})
+```
+
+**4. Видалити запис (POST).** Так, саме POST — не GET, навіть якщо це «видалення за посиланням».
+
+```javascript
+fetch(`/blog/comments/${commentId}/delete/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrftoken },
+})
+    .then(r => r.json())
+    .then(() => { row.remove(); });          // прибрати рядок зі сторінки
+```
+
+```python
+@require_POST
+def comment_delete(request, comment_id):
+    comment = get_object_or_404(Comment, pk=comment_id, author=request.user)
+    comment.delete()
+    return JsonResponse({'deleted': True})
+```
+
+Помітила закономірність? **Змінюється лише те, що всередині view** — сам обмін завжди однаковий: адреса, метод, дані, відповідь.
+
+### Чеклист: пишемо AJAX-операцію
+
+1. **Сформулюй, що має статися на екрані** після дії: який елемент оновиться. Це підкаже, які дані повернути.
+2. **Обери метод**: читаєш — GET, змінюєш — POST.
+3. **Напиши view** так, ніби це звичайна view, і поверни `JsonResponse` замість `render`. Поверни рівно те, що потрібно фронту, не більше.
+4. **Додай маршрут** в `urls.py` з іменем.
+5. **Постав захист**: `@require_POST` і перевірка прав. Для AJAX замість `@login_required` краще ручна перевірка з `status=401`, щоб не прилетів HTML сторінки входу.
+6. **Напиши запит на фронті**: адреса, метод, `X-CSRFToken` для POST, дані в тілі.
+7. **Обробіть обидві гілки**: `success`/`.then()` — оновити сторінку, `error`/`.catch()` — показати повідомлення.
+8. **Перевір у DevTools → Network**: статус, тіло запиту, тіло відповіді. Якщо статус 403 — забула токен, 302 — спрацював `@login_required`, 500 — впала view, дивись у консоль сервера.
+
+> <i class="bi bi-info-circle"></i> На jQuery ці ж запити пишуться через `$.ajax({ url, method, data, success, error })` — деталі й приклади в уроці про jQuery. А повний ланцюжок «кнопка → view → база → відповідь», спільний для AJAX і звичайних форм, розібраний в уроці «Операції з даними».
+
 ## Безпека й права — завжди на сервері
 
 Важливий наголос: AJAX **нічого не змінює** в тому, хто має право на дію. Перевіряти права, автентифікацію й коректність даних мусить **view** — так само, як для звичайного запиту.
@@ -213,6 +308,7 @@ AJAX-запит — це такий самий HTTP-запит, який буд�
 - Сценаріїв багато — жива пошук книг, «завантажити ще» статті, залежні списки жанр→фільм, перевірка username, кошик, рейтинг, інлайн-редагування — і в усіх сенс один: **оновити частину, лишитися на місці**.
 - **Правило:** треба лишитися на місці й оновити дрібницю → AJAX; треба перейти / оновити все → звичайний запит або `redirect`.
 - Технічно: `fetch` → view повертає `JsonResponse` (дані) **або** HTML-фрагмент через `render` (простіше; згадай htmx). GET — без токена, POST — з **CSRF-токеном**.
+- Типів запиту лише чотири — **прочитати (GET), створити, оновити, видалити (усі POST)**; обмін у них однаковий, змінюється тільки те, що всередині view. Пишеться за чеклістом: що оновиться на екрані → метод → view з `JsonResponse` → маршрут → захист → запит на фронті → обробка `success` **і** `error` → перевірка в DevTools.
 - **Безпека — завжди у view:** AJAX не змінює прав; клієнту не довіряй, усі перевірки на сервері.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/ref/csrf/" target="_blank" rel="noopener">CSRF protection <i class="bi bi-box-arrow-up-right"></i></a></div></div>

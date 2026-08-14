@@ -200,6 +200,8 @@ def contact(request):
 
 > <i class="bi bi-info-circle"></i> Патерн **Post/Redirect/Get**: після успішного POST завжди роби `redirect`, а не `render`. Інакше при оновленні сторінки браузер повторно надішле форму.
 
+> <i class="bi bi-pin-angle"></i> Повний сценарій дії, що змінює дані (перевірка методу й прав, робота з ORM, вибір між `redirect` і `JsonResponse`), розібраний в уроці «Операції з даними».
+
 ## Функції чи класи?
 
 Усе вище — **function-based views (FBV)**: view як функція. Django має ще **class-based views (CBV)** — view як клас із готовими «заготовками» (`ListView`, `DetailView`). Для типових списків/деталей вони економлять код. Коли який обирати — окремий урок «FBV vs CBV».

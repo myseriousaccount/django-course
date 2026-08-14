@@ -261,6 +261,8 @@ class Product(models.Model):
 
 > <i class="bi bi-exclamation-triangle"></i> **`CharField` без `max_length`** → помилка перевірки моделі. Для `CharField` довжина обов'язкова; безлімітний текст — це `TextField`.
 
+> <i class="bi bi-exclamation-triangle"></i> **`CharField` там, де є спеціальний тип.** `email = models.CharField(max_length=100)` збереже й `«привіт»`, бо для бази це просто рядок. Той самий `EmailField()` перевірить формат безкоштовно — і в адмінці, і у формі, і при `full_clean()`. Те саме стосується `URLField`, `SlugField`, `DecimalField` для грошей, `PositiveIntegerField` для кількості. Спершу шукай готовий тип і лише потім став `CharField`.
+
 > <i class="bi bi-exclamation-triangle"></i> **`ForeignKey` без `on_delete`** → `TypeError`. Аргумент обов'язковий — Django змушує тебе свідомо обрати долю пов'язаних об'єктів.
 
 > <i class="bi bi-exclamation-triangle"></i> **`null=True` на `CharField`/`TextField`** — уникай: два способи означати «пусто» (`''` і `NULL`). Для рядків став лише `blank=True`.

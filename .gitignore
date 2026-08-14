@@ -5,3 +5,6 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# Робочі нотатки, не для публікації
+tasks for claude/

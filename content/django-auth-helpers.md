@@ -148,6 +148,49 @@ def my_reviews(request):
 
 > <i class="bi bi-exclamation-triangle"></i> `is_authenticated` — це **атрибут**, а не метод. Не став дужок: пиши `user.is_authenticated`, а не `user.is_authenticated()`. З дужками умова завжди буде істинною (перевірятиметься сам об'єкт-метод), і захист «зламається» непомітно.
 
+## Звідки сторінка знає, хто ти
+
+Питання, яке виникає майже завжди: **як окрема сторінка дізнається `user.id`, якщо ми нічого туди не передавали?** Розберемо весь ланцюжок — він пояснює й те, чому імпорт `User` тут ні до чого.
+
+**Крок 1. Вхід.** Користувач надіслав логін і пароль, `authenticate()` їх перевірив, `login(request, user)` записав у **сесію** на сервері рядок «ця сесія належить користувачу №7».
+
+**Крок 2. Cookie.** У відповідь браузер отримав cookie `sessionid` — довгий випадковий рядок. Це просто ключ від комірки: жодного імені чи `user_id` у ньому немає.
+
+**Крок 3. Наступний запит.** Браузер сам додає цю cookie **до кожного** запиту на цей сайт — до сторінки каталогу, до AJAX-запиту, до завантаження форми.
+
+**Крок 4. Middleware.** Тут і відбувається магія, ще до того, як почне працювати твоя view:
+
+```
+запит із cookie sessionid
+   ↓
+SessionMiddleware        → знаходить сесію за ключем, кладе request.session
+   ↓
+AuthenticationMiddleware → бачить у сесії id користувача, робить запит до БД
+                           і кладе готовий об'єкт у request.user
+   ↓
+твоя view                → request.user уже заповнений
+```
+
+**Крок 5. У view.** Тому в будь-якій view поточний користувач уже є — його не треба ні шукати, ні імпортувати:
+
+```python
+def my_orders(request):
+    orders = Order.objects.filter(user=request.user)      # user.id усередині
+    return render(request, 'orders/my.html', {'orders': orders})
+```
+
+**Крок 6. У шаблоні.** Змінна `{{ user }}` є в кожному шаблоні, бо її додає context processor `django.contrib.auth.context_processors.auth` зі списку в `settings.py`. Саме тому шапка сайту знає ім'я користувача, хоча жодна view її туди не передавала.
+
+> <i class="bi bi-pin-angle"></i> **Головне непорозуміння.** `from django.contrib.auth.models import User` потрібен, щоб **робити запити до таблиці користувачів** (`User.objects.filter(...)`, `ForeignKey(User, ...)`). До поточного користувача цей імпорт не має жодного стосунку: він приходить сам, у `request.user`, завдяки middleware.
+
+<i class="bi bi-lightbulb"></i> Аналогія: cookie `sessionid` — це номерок із гардеробу. У самому номерку не написано ні твого імені, ні що ти здала — він лише дозволяє гардеробнику (сесії на сервері) знайти твою вішалку. Тому підробити номерок і «стати» іншим користувачем не вийде: усі справжні дані лежать на сервері.
+
+Три наслідки, які варто пам'ятати:
+
+- **Це працює й для AJAX.** Браузер додає cookie і до фонових запитів, тож у AJAX-в'ю `request.user` теж заповнений. Передавати `user_id` у `data` не треба — і не можна, бо це підробляється.
+- **Немає cookie — немає користувача.** Очистила cookie, відкрила вікно в режимі анонімного перегляду, зайшла з іншого браузера — там `request.user` буде `AnonymousUser`.
+- **`logout(request)` знищує сесію** на сервері, тому наступний запит із тією самою cookie вже нікого не «впізнає».
+
 ## @login_required — захист сторінок (функції)
 
 > **`@login_required`** — декоратор, що пускає у view лише увійшлих користувачів. Гостя він перенаправляє на сторінку входу.
@@ -225,6 +268,7 @@ LOGIN_REDIRECT_URL = 'home'
 - **`authenticate()`** лише перевіряє логін і пароль та повертає `User` або `None` — сесію не відкриває.
 - **`login()`** відкриває сесію, **`logout()`** закриває; після обох майже завжди `redirect`. Реєстрація = `create_user()` + одразу `login()`.
 - **`request.user`** доступний усюди; **`request.user.is_authenticated`** (атрибут, без дужок) відрізняє гостя від увійшлого.
+- Ланцюжок «звідки сторінка знає, хто ти»: cookie `sessionid` → `SessionMiddleware` → `AuthenticationMiddleware` → `request.user` у view → context processor `auth` → `{{ user }}` у шаблоні. Імпорт `User` потрібен лише для **запитів до таблиці** користувачів, а не для доступу до поточного.
 - **`@login_required`** (для функцій) і **`LoginRequiredMixin`** (для класів, ставити зліва) захищають сторінки — прямий аналог `@login_required` із Flask-Login. `LOGIN_URL` і `LOGIN_REDIRECT_URL` керують перенаправленнями.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/auth/default/" target="_blank" rel="noopener">Using the authentication system <i class="bi bi-box-arrow-up-right"></i></a></div></div>
