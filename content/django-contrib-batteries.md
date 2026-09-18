@@ -49,7 +49,7 @@ INSTALLED_APPS = [
 
 Далі — по кожному окремо.
 
-## auth — користувачі, паролі, права
+### auth — користувачі, паролі, права
 
 `django.contrib.auth` — система автентифікації: модель `User`, хешування паролів, вхід/вихід, групи й права доступу.
 
@@ -86,7 +86,9 @@ class ProductCreate(LoginRequiredMixin, CreateView):
     fields = ['name', 'price']
 ```
 
-## admin — панель керування даними
+Повний цикл (`create_user()`, `authenticate()`, `request.user`, налаштування редиректів) — в уроці «Автентифікація».
+
+### admin — панель керування даними
 
 `django.contrib.admin` — готовий CRUD-інтерфейс для твоїх моделей на `/admin`, без жодного HTML чи view.
 
@@ -108,7 +110,9 @@ class BookAdmin(admin.ModelAdmin):
 
 > <i class="bi bi-lightbulb"></i> admin спирається на **auth** (треба залогінитись) і на **contenttypes** (щоб знати всі моделі). Батарейки працюють у зв'язці — саме тому кілька рядків у `INSTALLED_APPS` йдуть разом.
 
-## sessions — пам'ять між запитами
+`inlines`, `list_filter`, `actions`, кастомні поля форми — уроки «Адмін-панель» і «Адмінка: зручні поля й віджети».
+
+### sessions — пам'ять між запитами
 
 `django.contrib.sessions` — механізм, що зберігає дані користувача між запитами через `request.session`.
 
@@ -123,9 +127,9 @@ def add_to_cart(request, product_id):
     return redirect('shop:list')
 ```
 
-Саме на сесіях тримається й `login()` з auth — тому auth і sessions зазвичай ідуть разом.
+Саме на сесіях тримається й `login()` з auth — тому auth і sessions зазвичай ідуть разом. Кошик у сесії, лічильник у шапці через context processor — урок «Сесії та кошик».
 
-## messages — flash-повідомлення
+### messages — flash-повідомлення
 
 `django.contrib.messages` — одноразові повідомлення, що «переживають» редірект і показуються на наступній сторінці.
 
@@ -150,9 +154,9 @@ def add_review(request, movie_id):
 {% endfor %}
 ```
 
-Рівні: `messages.success`, `.info`, `.warning`, `.error` — теги лягають у CSS-клас.
+Рівні: `messages.success`, `.info`, `.warning`, `.error` — теги лягають у CSS-клас. Детально — в уроці «Повідомлення».
 
-## staticfiles — статика (CSS, JS, зображення)
+### staticfiles — статика (CSS, JS, зображення)
 
 `django.contrib.staticfiles` — керує статичними файлами: дає тег `{% static %}` і команду `collectstatic` для продакшену.
 
@@ -164,7 +168,9 @@ def add_review(request, movie_id):
 <img src="{% static 'library/logo.png' %}">
 ```
 
-## contenttypes — облік усіх моделей
+`STATICFILES_DIRS`, `collectstatic`, різниця dev/prod — урок «Статичні файли».
+
+### contenttypes — облік усіх моделей
 
 `django.contrib.contenttypes` — службова app, що веде реєстр усіх моделей проєкту. Сама по собі UI не дає.
 
