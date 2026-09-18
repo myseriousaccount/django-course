@@ -19,7 +19,11 @@ for post in posts:
 
 Найгірше, що на маленькій базі (5 записів) сторінка «літає» — проблему видно лише коли записів стане багато. Тому N+1 треба ловити свідомо, а не «коли гальмуватиме».
 
-## `select_related` — для ForeignKey і OneToOne
+## Два інструменти проти N+1
+
+Обидва підвантажують пов'язані об'єкти наперед, але різними SQL-засобами, тому підходять для різних типів зв'язку.
+
+### `select_related` — для ForeignKey і OneToOne
 
 > **`select_related`** каже ORM: «одразу підтягни пов'язаний об'єкт **тим самим запитом**, через SQL JOIN». Працює для **ForeignKey** і **OneToOne** — тобто там, де у кожного об'єкта **один** пов'язаний.
 
@@ -48,7 +52,7 @@ books = Book.objects.select_related('author')
 orders = Order.objects.select_related('customer__city')
 ```
 
-## `prefetch_related` — для ManyToMany і зворотних зв'язків
+### `prefetch_related` — для ManyToMany і зворотних зв'язків
 
 > **`prefetch_related`** робить **окремий** запит на пов'язані об'єкти й «склеює» їх з основними вже в Python. Потрібен там, де у кожного об'єкта **багато** пов'язаних: **ManyToMany** і **зворотні** зв'язки (`related_name`).
 
@@ -74,7 +78,7 @@ orders = Order.objects.prefetch_related('items')
 
 > <i class="bi bi-info-circle"></i> Обидва методи можна поєднувати в одному ланцюжку — так і роблять на реальних списках: `Post.objects.select_related('author').prefetch_related('tags', 'comments')`.
 
-## select_related чи prefetch_related — коли який
+### Який із двох обрати
 
 Правило просте й тримається на одному питанні: **скільки пов'язаних об'єктів у одного**?
 

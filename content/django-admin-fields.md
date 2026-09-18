@@ -62,7 +62,11 @@ class OrderAdmin(admin.ModelAdmin):
 | `autocomplete_fields` | FK / M2M | сотні+ (є `search_fields` у цільового admin) |
 | `raw_id_fields` | FK / M2M | тисячі+ записів |
 
-## Поля з `choices`: `radio_fields`
+## Поля на сторінці об'єкта
+
+Набір опцій `ModelAdmin`, які змінюють вигляд і поведінку окремих полів форми.
+
+### Поля з `choices`: `radio_fields`
 
 Якщо поле має кілька варіантів (`status`, `priority`), випадний список можна замінити на **радіо-кнопки** — вибір видно одразу:
 
@@ -72,7 +76,7 @@ class PostAdmin(admin.ModelAdmin):
     radio_fields = {'status': admin.VERTICAL}   # або admin.HORIZONTAL
 ```
 
-## Автозаповнення slug: `prepopulated_fields`
+### Автозаповнення slug: `prepopulated_fields`
 
 Щоб `slug` сам заповнювався з `title` під час набору (транслітерація + дефіси):
 
@@ -84,7 +88,7 @@ class ArticleAdmin(admin.ModelAdmin):
 
 > <i class="bi bi-info-circle"></i> `prepopulated_fields` **не працює** з `ForeignKey`, `ManyToManyField` і полями «тільки для читання» — лише з простими текстовими джерелами.
 
-## Тільки для читання й обчислені поля: `readonly_fields`
+### Тільки для читання й обчислені поля: `readonly_fields`
 
 Показати в формі те, що не можна редагувати (дати створення, лічильники) або **обчислене** значення:
 
@@ -99,7 +103,7 @@ class OrderAdmin(admin.ModelAdmin):
         return f'{obj.total()} грн'
 ```
 
-## Прев'ю зображення в адмінці
+### Прев'ю зображення в адмінці
 
 `ImageField` за замовчуванням показує лише посилання на файл. Щоб бачити **саму картинку**, додають обчислене readonly-поле, що повертає HTML:
 
@@ -122,7 +126,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 > <i class="bi bi-exclamation-triangle"></i> Використовуй `format_html`, а **не** звичайний рядок чи `mark_safe` без екранування. `format_html` безпечно підставляє значення (захист від XSS), як `.format()`, але для HTML.
 
-## Перевизначити віджет поля: `formfield_overrides`
+### Перевизначити віджет поля: `formfield_overrides`
 
 Наприклад, зробити всі `TextField` більшими за розміром прямо в адмінці:
 
@@ -141,7 +145,7 @@ class PostAdmin(admin.ModelAdmin):
 
 Так змінюється віджет **для всіх полів цього типу** в цьому admin. Точково для одного поля використовують власну `ModelForm` через `form = ...`.
 
-## Дати: календар і навігація за датами
+### Дати: календар і навігація за датами
 
 - `DateField` / `DateTimeField` Django **автоматично** показує з віджетом-календарем і годинником — нічого налаштовувати не треба.
 - Для списку додай `date_hierarchy`, щоб згори з'явилась навігація «рік → місяць → день»:
@@ -152,7 +156,7 @@ class PostAdmin(admin.ModelAdmin):
     date_hierarchy = 'published_at'
 ```
 
-## Підказки під полями
+### Підказки під полями
 
 Текст-пояснення під полем задають у **моделі** через `help_text` — і адмінка його показує:
 

@@ -112,7 +112,9 @@ def discounted(price, percent=0):
 <p>Ціна зі знижкою: {{ final_price|currency }}</p>
 ```
 
-**Доступ до контексту.** З `takes_context=True` першим параметром приходить контекст шаблону — там `request`, `user` та інші змінні:
+### Доступ до контексту
+
+З `takes_context=True` першим параметром приходить контекст шаблону — там `request`, `user` та інші змінні:
 
 ```python
 # carts/templatetags/cart_extras.py
@@ -129,7 +131,9 @@ def cart_total(context):
 
 > <i class="bi bi-info-circle"></i> `context['request']` доступний лише тоді, коли ввімкнено context processor `django.template.context_processors.request` — у стандартному `settings.py` він уже є.
 
-**Блочний варіант.** З Django 5.2 є `@register.simple_block_tag` — тег із вмістом між відкривальним і закривальним тегами. Функція отримує цей вміст першим аргументом:
+### Блочний варіант: simple_block_tag
+
+З Django 5.2 є `@register.simple_block_tag` — тег із вмістом між відкривальним і закривальним тегами. Функція отримує цей вміст першим аргументом:
 
 ```python
 # core/templatetags/ui.py

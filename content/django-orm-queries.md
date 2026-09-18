@@ -2,7 +2,10 @@
 
 Модель описує структуру даних, `QuerySet` API — спосіб їх читати й змінювати без SQL. Будь-який запит починається з менеджера `objects`. Урок — довідник основних операцій; приклади зручно перевіряти в оболонці `python manage.py shell`.
 
-## Дістати дані: all, filter, exclude, get
+## Читання: як дістати дані
+
+Читання складається з двох рішень: які рядки взяти і в якому вигляді їх отримати. Нижче — інструменти в порядку від базових до складніших.
+### Дістати рядки: all, filter, exclude, get
 
 Це чотири базові способи вибрати рядки з таблиці через менеджер `Model.objects`.
 
@@ -25,7 +28,7 @@ Book.objects.get(isbn='978-0000')      # РІВНО один об'єкт
 >
 > Тому для detail-сторінок замість голого `.get()` зазвичай беруть `get_object_or_404` (див. урок про shortcuts).
 
-## Досліджувати результат: order_by, count, exists, first, last
+### Дослідити результат: order_by, count, exists, first, last
 
 Методи, що впорядковують QuerySet або дістають про нього коротку інформацію.
 
@@ -47,7 +50,7 @@ Post.objects.last()                           # останній об'єкт а�
 
 > <i class="bi bi-info-circle"></i> Хочеш перевірити наявність — пиши `if qs.exists():`, а не `if qs:`. Обидва працюють, але `.exists()` виконує легкий запит замість завантаження всього набору.
 
-## Field lookups: фільтрація за умовами
+### Field lookups: фільтрація за умовами
 
 Field lookups — це «модифікатори» полів через подвійне підкреслення `__`, що задають **як саме** порівнювати значення.
 
@@ -89,7 +92,74 @@ Order.objects.filter(user__is_active=False)
 
 Lookups покривають типові SQL-умови (`>=`, `LIKE`, `IN`, `IS NULL`) декларативно, без ручного SQL. Кілька умов у межах одного `.filter()` поєднуються через **І (AND)**.
 
-## Ланцюжки й лінивість QuerySet
+### Q і F: умови АБО і поле проти поля
+
+`Q` дозволяє будувати умови з **АБО (OR)**, а `F` — посилатися на **інше поле** того самого рядка прямо в запиті.
+
+```python
+# python manage.py shell
+from django.db.models import Q, F
+
+# Q: назва містить 'Django' АБО ціна менша за 500
+Book.objects.filter(Q(title__icontains='django') | Q(price__lt=500))
+
+# Q: НЕ (~) — усі пости, крім чернеток
+Post.objects.filter(~Q(status='draft'))
+
+# F: товари, де ціна зі знижкою менша за звичайну ціну (поле проти поля)
+Product.objects.filter(sale_price__lt=F('price'))
+
+# F: підняти ціну всім на 100 — на рівні БД, без завантаження об'єктів
+Product.objects.update(price=F('price') + 100)
+```
+
+Звичайний `.filter(a=1, b=2)` — це завжди **І**. Для **АБО** потрібен `Q` (`|` — або, `&` — і, `~` — не). А `F` дозволяє порівнювати чи змінювати поле відносно іншого поля прямо в базі, без зайвого циклу в Python.
+
+### Агрегація й анотація: aggregate, annotate
+
+`aggregate` рахує **одне** підсумкове число по всьому набору; `annotate` додає обчислене поле **до кожного** об'єкта.
+
+```python
+# python manage.py shell
+from django.db.models import Count, Avg, Sum, Max
+
+# aggregate → словник з одним підсумком
+Product.objects.aggregate(Avg('price'))      # {'price__avg': 512.4}
+Order.objects.aggregate(total=Sum('amount')) # {'total': 18400}
+
+# annotate → у кожного автора з'являється .book_count
+from django.db.models import Count
+authors = Author.objects.annotate(book_count=Count('books'))
+for a in authors:
+    print(a.name, a.book_count)              # кількість книг кожного автора
+```
+
+Ці підрахунки робить **база**, а не Python-цикл, — тому вони швидкі навіть на великих таблицях. `Count`, `Sum`, `Avg`, `Max`, `Min` — найчастіші функції.
+
+### values і values_list: без повних об'єктів
+
+Замість повноцінних об'єктів моделі повернути лише окремі поля — як словники (`values`) або кортежі/плоский список (`values_list`).
+
+```python
+# python manage.py shell
+# словники з обраними полями
+Book.objects.values('title', 'price')
+# <QuerySet [{'title': '1984', 'price': 250}, ...]>
+
+# кортежі
+Product.objects.values_list('name', 'price')
+# <QuerySet [('Мишка', 300), ('Клавіатура', 800), ...]>
+
+# flat=True — плоский список одного поля
+User.objects.values_list('email', flat=True)
+# <QuerySet ['a@ex.com', 'b@ex.com', ...]>
+```
+
+Коли потрібні лише кілька полів (наприклад, список email для розсилки), `values_list(..., flat=True)` дешевший за завантаження цілих об'єктів — менше даних із БД і менше пам'яті.
+
+Повторювані фільтри й підсумки виносять у власний менеджер — це урок «Менеджери й власні вибірки».
+
+## Лінивість QuerySet
 
 QuerySet **лінивий**: запит до БД **не виконується** в момент його створення. Він відкладається до того, коли ти реально звернешся до даних.
 
@@ -112,7 +182,34 @@ for movie in qs:   # ← ОСЬ ТУТ виконується один SELECT
 
 > <i class="bi bi-exclamation-triangle"></i> Зворотний бік — кешування. Якщо звернутися до одного QuerySet двічі в різних місцях, він може виконати запит повторно. Коли результат потрібен кілька разів, збережи його в список: `movies = list(qs)`.
 
-## Створення: create, save, bulk_create
+### Лінивість на практиці
+
+Типовий приклад — список із необов'язковим пошуком: фільтр додається лише за потреби, а запит виконується один раз.
+
+```python
+# blog/views.py
+def post_feed(request):
+    posts = Post.objects.filter(is_published=True).order_by('-created_at')
+
+    query = request.GET.get('q')
+    if query:                                   # фільтр додається ЛІНИВО
+        posts = posts.filter(
+            Q(title__icontains=query) | Q(body__icontains=query)
+        )
+
+    context = {
+        'posts': posts,                         # SQL виконається в шаблоні
+        'total': posts.count(),
+    }
+    return render(request, 'blog/feed.html', context)
+```
+
+Тут добре видно лінивість: фільтр за пошуком додається лише за потреби, а реальний запит іде один раз — коли шаблон почне ітерувати `posts`.
+
+## Запис: створення, зміна, видалення
+
+Три операції, що змінюють таблицю. У кожної є варіант для одного об'єкта і варіант, що обробляє цілий набір одним SQL-запитом.
+### Створення: create, save, bulk_create
 
 Три способи додати нові рядки в таблицю.
 
@@ -137,6 +234,40 @@ Product.objects.bulk_create([
 `.create()` економить рядок порівняно з конструктором + `.save()`. А `bulk_create()` виконує **один** `INSERT` на весь список — незрівнянно швидше, ніж викликати `.save()` у циклі (там був би окремий запит на кожен об'єкт).
 
 > <i class="bi bi-exclamation-triangle"></i> `bulk_create()` **не викликає** метод `save()` моделі й сигнали `pre_save`/`post_save` — якщо в моделі є логіка в `save()`, масове створення її омине.
+
+### Зміна: save, update
+
+Змінити один об'єкт або цілий набір.
+
+```python
+# python manage.py shell
+# Один об'єкт: змінити атрибут і зберегти
+product = Product.objects.get(pk=5)
+product.price = 999
+product.save()
+
+# Цілий QuerySet — один UPDATE на всі рядки
+Order.objects.filter(status='new').update(status='processing')
+Movie.objects.filter(is_released=False).update(rating=None)
+```
+
+`queryset.update()` виконує **одну** SQL-команду на весь набір — набагато швидше, ніж цикл із `.save()` по кожному об'єкту.
+
+> <i class="bi bi-exclamation-triangle"></i> `queryset.update()`, як і `bulk_create`, НЕ викликає `save()` моделі й сигнали. Якщо в моделі є кастомна логіка в `save()`, масовий `update()` її омине — враховуй це.
+
+### Видалення: delete
+
+```python
+# python manage.py shell
+# один об'єкт
+post = Post.objects.get(pk=10)
+post.delete()
+
+# масово — один DELETE на весь набір
+Order.objects.filter(status='cancelled').delete()
+```
+
+> <i class="bi bi-exclamation-triangle"></i> Видалення каскадне: якщо в об'єкта є пов'язані записи через `ForeignKey(on_delete=CASCADE)`, вони теж зникнуть. Наприклад, видалення `Post` забере й усі його коментарі.
 
 ## get_or_create: створити, лише якщо ще немає
 
@@ -215,131 +346,6 @@ rating, created = Rating.objects.update_or_create(
 | `get_or_create()` | повертає знайдений, `created=False` | створює, `created=True` |
 | `update_or_create()` | оновлює полями `defaults` | створює |
 
-## Зміна: save, update
-
-Змінити один об'єкт або цілий набір.
-
-```python
-# python manage.py shell
-# Один об'єкт: змінити атрибут і зберегти
-product = Product.objects.get(pk=5)
-product.price = 999
-product.save()
-
-# Цілий QuerySet — один UPDATE на всі рядки
-Order.objects.filter(status='new').update(status='processing')
-Movie.objects.filter(is_released=False).update(rating=None)
-```
-
-`queryset.update()` виконує **одну** SQL-команду на весь набір — набагато швидше, ніж цикл із `.save()` по кожному об'єкту.
-
-> <i class="bi bi-exclamation-triangle"></i> `queryset.update()`, як і `bulk_create`, НЕ викликає `save()` моделі й сигнали. Якщо в моделі є кастомна логіка в `save()`, масовий `update()` її омине — враховуй це.
-
-## Видалення: delete
-
-```python
-# python manage.py shell
-# один об'єкт
-post = Post.objects.get(pk=10)
-post.delete()
-
-# масово — один DELETE на весь набір
-Order.objects.filter(status='cancelled').delete()
-```
-
-> <i class="bi bi-exclamation-triangle"></i> Видалення каскадне: якщо в об'єкта є пов'язані записи через `ForeignKey(on_delete=CASCADE)`, вони теж зникнуть. Наприклад, видалення `Post` забере й усі його коментарі.
-
-## Q і F: складніші умови
-
-`Q` дозволяє будувати умови з **АБО (OR)**, а `F` — посилатися на **інше поле** того самого рядка прямо в запиті.
-
-```python
-# python manage.py shell
-from django.db.models import Q, F
-
-# Q: назва містить 'Django' АБО ціна менша за 500
-Book.objects.filter(Q(title__icontains='django') | Q(price__lt=500))
-
-# Q: НЕ (~) — усі пости, крім чернеток
-Post.objects.filter(~Q(status='draft'))
-
-# F: товари, де ціна зі знижкою менша за звичайну ціну (поле проти поля)
-Product.objects.filter(sale_price__lt=F('price'))
-
-# F: підняти ціну всім на 100 — на рівні БД, без завантаження об'єктів
-Product.objects.update(price=F('price') + 100)
-```
-
-Звичайний `.filter(a=1, b=2)` — це завжди **І**. Для **АБО** потрібен `Q` (`|` — або, `&` — і, `~` — не). А `F` дозволяє порівнювати чи змінювати поле відносно іншого поля прямо в базі, без зайвого циклу в Python.
-
-## Агрегація й анотація: aggregate, annotate
-
-`aggregate` рахує **одне** підсумкове число по всьому набору; `annotate` додає обчислене поле **до кожного** об'єкта.
-
-```python
-# python manage.py shell
-from django.db.models import Count, Avg, Sum, Max
-
-# aggregate → словник з одним підсумком
-Product.objects.aggregate(Avg('price'))      # {'price__avg': 512.4}
-Order.objects.aggregate(total=Sum('amount')) # {'total': 18400}
-
-# annotate → у кожного автора з'являється .book_count
-from django.db.models import Count
-authors = Author.objects.annotate(book_count=Count('books'))
-for a in authors:
-    print(a.name, a.book_count)              # кількість книг кожного автора
-```
-
-Ці підрахунки робить **база**, а не Python-цикл, — тому вони швидкі навіть на великих таблицях. `Count`, `Sum`, `Avg`, `Max`, `Min` — найчастіші функції.
-
-## values і values_list: без повних об'єктів
-
-Замість повноцінних об'єктів моделі повернути лише окремі поля — як словники (`values`) або кортежі/плоский список (`values_list`).
-
-```python
-# python manage.py shell
-# словники з обраними полями
-Book.objects.values('title', 'price')
-# <QuerySet [{'title': '1984', 'price': 250}, ...]>
-
-# кортежі
-Product.objects.values_list('name', 'price')
-# <QuerySet [('Мишка', 300), ('Клавіатура', 800), ...]>
-
-# flat=True — плоский список одного поля
-User.objects.values_list('email', flat=True)
-# <QuerySet ['a@ex.com', 'b@ex.com', ...]>
-```
-
-Коли потрібні лише кілька полів (наприклад, список email для розсилки), `values_list(..., flat=True)` дешевший за завантаження цілих об'єктів — менше даних із БД і менше пам'яті.
-
-Повторювані фільтри й підсумки виносять у власний менеджер — це урок «Менеджери й власні вибірки».
-
-## Лінивість на практиці
-
-Типовий приклад — список із необов'язковим пошуком: фільтр додається лише за потреби, а запит виконується один раз.
-
-```python
-# blog/views.py
-def post_feed(request):
-    posts = Post.objects.filter(is_published=True).order_by('-created_at')
-
-    query = request.GET.get('q')
-    if query:                                   # фільтр додається ЛІНИВО
-        posts = posts.filter(
-            Q(title__icontains=query) | Q(body__icontains=query)
-        )
-
-    context = {
-        'posts': posts,                         # SQL виконається в шаблоні
-        'total': posts.count(),
-    }
-    return render(request, 'blog/feed.html', context)
-```
-
-Тут добре видно лінивість: фільтр за пошуком додається лише за потреби, а реальний запит іде один раз — коли шаблон почне ітерувати `posts`.
-
 ## Типові помилки / Нюанси
 
 | Що не так | Наслідок і як правильно |
@@ -361,9 +367,9 @@ def post_feed(request):
 - `objects.all() / .filter() / .exclude()` повертають **QuerySet** (багато); `.get()` — рівно **один** об'єкт і кидає `DoesNotExist` / `MultipleObjectsReturned`.
 - `.order_by()` (кілька полів, `-` для спадання), `.count()`, `.exists()`, `.first()/.last()` досліджують набір; `.exists()` і `.count()` дешевші за завантаження всіх об'єктів.
 - **Field lookups** через `__` (`gte`, `lte`, `range`, `contains`, `icontains`, `in`, `isnull`, дати) задають умову; у межах `.filter()` вони поєднуються через **І**; через `__` можна йти й по зв'язках (`author__country`).
+- `Q` — умови **АБО** (`|`, `&`, `~`); `F` — посилання на поле в самій БД; `aggregate`/`annotate` — підрахунки на боці бази; `values`/`values_list` — лише потрібні поля.
 - QuerySet **лінивий**: ланцюжок фільтрів збирається в один SQL, що виконується лише при зверненні до даних.
 - Запис: `.create()`, конструктор + `.save()`, `bulk_create()`; зміна `obj.save()` / масовий `queryset.update()`; видалення `.delete()` (масові операції — одна SQL-команда, але без сигналів).
 - `get_or_create()` створює, лише якщо об'єкта ще немає, і повертає **кортеж** `(об'єкт, created)`; поля, що не мають брати участі в пошуку, кладуть у `defaults`. `update_or_create()` — те саме, але знайдений об'єкт ще й оновлює. Від дублікатів у базі захищає `unique_together`, а не сам метод.
-- `Q` — умови **АБО** (`|`, `&`, `~`); `F` — посилання на поле в самій БД; `aggregate`/`annotate` — підрахунки на боці бази; `values`/`values_list` — лише потрібні поля.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/db/queries/" target="_blank" rel="noopener">Making queries <i class="bi bi-box-arrow-up-right"></i></a></div></div>

@@ -20,7 +20,11 @@ Django — це один великий пакет `django`, розкладен�
 
 Назви модулів відповідають зонам: `db` — база, `http` — запит і відповідь, `contrib` — готові підсистеми, `core` — механіка ядра, `utils` — дрібні помічники. Пошук потрібного починається з питання, до якої з цих зон належить задача.
 
-## django.db — моделі й база
+## Модулі один за одним
+
+Далі — що лежить у кожному модулі й у яких задачах він потрібен.
+
+### django.db — моделі й база
 
 ```python
 # school/models.py
@@ -45,7 +49,7 @@ with transaction.atomic():        # або обидва записи, або ж�
     OrderItem.objects.bulk_create(items)
 ```
 
-## django.urls — маршрути й зворотні посилання
+### django.urls — маршрути й зворотні посилання
 
 ```python
 # school/urls.py
@@ -66,7 +70,7 @@ def get_absolute_url(self):
 
 > <i class="bi bi-info-circle"></i> `reverse_lazy` — та сама функція, але «відкладена». Потрібна там, де маршрути ще не завантажені в момент виконання рядка: у `success_url` класових views, у значеннях за замовчуванням, у налаштуваннях.
 
-## django.shortcuts — щоденні хелпери
+### django.shortcuts — щоденні хелпери
 
 ```python
 # blog/views.py
@@ -75,7 +79,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 
 Три функції, які є майже в кожній view: віддати сторінку, перенаправити, дістати об'єкт або 404. Детально — в окремому уроці «Хелпери shortcuts».
 
-## django.http — відповіді власноруч
+### django.http — відповіді власноруч
 
 ```python
 # cinema/views.py
@@ -95,7 +99,7 @@ from django.http import JsonResponse, HttpResponse, Http404, HttpResponseForbidd
 return JsonResponse({'awards': list(movie.awards.values('title', 'year'))})
 ```
 
-## django.forms — форми
+### django.forms — форми
 
 ```python
 # cinema/forms.py
@@ -110,7 +114,7 @@ class ReviewForm(forms.Form):
 
 > <i class="bi bi-exclamation-triangle"></i> **Найпідступніша плутанина в Django.** `CharField` існує у двох різних модулях: `models.CharField` — це стовпець у базі, `forms.CharField` — це поле у формі. Назви однакові, призначення різні. Дивись на префікс: `models.` — база, `forms.` — форма.
 
-## django.contrib — вбудовані застосунки
+### django.contrib — вбудовані застосунки
 
 Це не один модуль, а набір готових застосунків. Найуживаніші імпорти:
 
@@ -134,7 +138,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 Що дає кожен із них — в уроці «Вбудовані застосунки». Там же різниця між застосунком, модулем і бібліотекою тегів.
 
-## django.core — валідатори, винятки, пагінація, пошта
+### django.core — валідатори, винятки, пагінація, пошта
 
 ```python
 # library/models.py
@@ -154,7 +158,7 @@ paginator = Paginator(Post.objects.all(), 20)
 
 > <i class="bi bi-info-circle"></i> `ValidationError` теж має двійника: у формах його зазвичай піднімають у методах `clean_<field>()` і беруть із `django.core.exceptions`. Це та сама помилка, просто імпорт із ядра.
 
-## django.views — декоратори й класові views
+### django.views — декоратори й класові views
 
 ```python
 # blog/views.py
@@ -165,7 +169,7 @@ from django.views.generic import ListView, DetailView, CreateView
 
 `require_POST` — той самий декоратор, яким закривають операції зміни даних, щоб їх не можна було виконати переходом за посиланням.
 
-## django.utils — дрібні помічники
+### django.utils — дрібні помічники
 
 ```python
 # blog/models.py
@@ -184,7 +188,7 @@ slugify('Тигролови Івана Багряного')     # 'tigrolovi-iva
 
 > <i class="bi bi-exclamation-triangle"></i> Бери `timezone.now()`, а не `datetime.now()`. Django працює з часовими поясами (`USE_TZ = True`), і «наївний» час із `datetime` дасть попередження й криві порівняння.
 
-## django.conf — налаштування
+### django.conf — налаштування
 
 ```python
 # core/utils.py
