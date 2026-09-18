@@ -63,19 +63,19 @@
 
     { "id": "django-models-stepbystep", "section": "data", "icon": "bi-database-add",
       "title": "Створення моделі",
-      "summary": "Повний робочий процес: від класу в models.py до makemigrations/migrate й адмінки. Best practices, __str__/Meta, і що насправді означає «зареєструвати модель»." },
-
-    { "id": "django-migrations", "section": "data", "icon": "bi-layers",
-      "title": "Міграції",
-      "summary": "makemigrations і migrate, showmigrations, sqlmigrate, нове обовʼязкове поле, обмеження на таблиці з даними, RunPython, відкат і злиття конфліктів." },
+      "summary": "Повний робочий процес: клас у models.py, __str__ і Meta, зв'язки ForeignKey/ManyToMany/OneToOne, міграції, обмеження бази й реєстрація в адмінці." },
 
     { "id": "django-model-fields", "section": "data", "icon": "bi-bricks",
-      "title": "Поля та зв'язки",
-      "summary": "Типи полів (Char/Text/Decimal/DateTime/Image…), опції (null/blank/default/choices), зв'язки ForeignKey/ManyToMany/OneToOne, Meta та __str__." },
+      "title": "Поля моделі",
+      "summary": "Довідник типів полів (Char/Text/Decimal/DateTime/Image…), спільні опції (null/blank/default/choices), унікальність та індекси." },
 
     { "id": "django-model-methods", "section": "data", "icon": "bi-braces-asterisk",
       "title": "Методи моделі",
       "summary": "Обчислення про один обʼєкт: @property і метод-дія, чому в шаблоні без дужок, __str__ і get_absolute_url, покроковий перенос коду з view." },
+
+    { "id": "django-migrations", "section": "data", "icon": "bi-layers",
+      "title": "Міграції",
+      "summary": "makemigrations і migrate, showmigrations, sqlmigrate, нове обовʼязкове поле, обмеження на таблиці з даними, RunPython, відкат і злиття конфліктів." },
 
     { "id": "django-orm-queries", "section": "data", "icon": "bi-search",
       "title": "Запити до бази (ORM)",

@@ -1,6 +1,6 @@
 # Створення моделі
 
-Модель — Python-клас, з якого Django виводить таблицю в базі, форми й інтерфейс адмін-панелі. Урок проходить повний шлях: від опису предметної області до застосованої міграції, з розбором типових сутностей і практик, які варто закласти одразу.
+Модель — Python-клас, з якого Django виводить таблицю в базі, форми й інтерфейс адмін-панелі. Урок проходить повний шлях: від опису предметної області до застосованої міграції, з окремим розділом про зв'язки між моделями й практиками, які варто закласти одразу.
 
 ## Від предметної області до класу
 
@@ -14,13 +14,13 @@
 
 Якщо сутність накопичує різнорідні властивості — це сигнал розділити її на дві. Якщо для «моделі» не знаходиться жодного власного поля, крім зв'язку, — можливо, це не модель, а поле іншої.
 
-## Робочий процес
+## Клас моделі крок за кроком
 
-### 1. Файл
+### Де живуть моделі
 
-Моделі живуть у `models.py` свого застосунку. Django шукає їх саме там, тому інші розташування вимагають додаткових налаштувань.
+Моделі пишуть у `models.py` свого застосунку. Django шукає їх саме там, тому інші розташування вимагають додаткових налаштувань.
 
-### 2. Клас і поля
+### Клас і поля
 
 ```python
 # blog/models.py
@@ -40,7 +40,9 @@ class Post(models.Model):
 
 `auto_now_add=True` заповнює значення один раз при створенні, `auto_now=True` оновлює його при кожному `save()`.
 
-### 3. `__str__`
+Повний довідник типів полів і їхніх опцій — в уроці «Поля моделі».
+
+### `__str__`
 
 ```python
 # blog/models.py
@@ -50,7 +52,7 @@ class Post(models.Model):
 
 Без цього методу об'єкти показуються як `Post object (1)` — в адмін-панелі, в оболонці, у логах і у випадаючих списках форм. Формально він необов'язковий, практично потрібен завжди.
 
-### 4. `class Meta`
+### `class Meta`
 
 ```python
 # blog/models.py
@@ -62,7 +64,7 @@ class Post(models.Model):
 
 `ordering` задає порядок за замовчуванням для всіх запитів до моделі: без нього база може повертати рядки в довільному порядку, і пагінація почне «перемішувати» сторінки. `verbose_name` замінює автоматично згенеровану англійську назву в адмін-панелі.
 
-### 5. Методи моделі
+### Методи моделі
 
 ```python
 # blog/models.py
@@ -70,9 +72,166 @@ class Post(models.Model):
         return not self.is_published
 ```
 
-Логіку, що стосується однієї сутності, тримають у самій моделі: її можна викликати з view, з команди `manage.py`, з тесту й з адмінки, не дублюючи.
+Логіку, що стосується однієї сутності, тримають у самій моделі: її можна викликати з view, з команди `manage.py`, з тесту й з адмінки, не дублюючи. Детальніше — в уроці «Методи моделі».
 
-### 6. Міграції
+## Зв'язки між моделями
+
+Окрема таблиця рідко живе сама по собі: коментар належить статті, книга має жанри, у користувача є профіль. Django описує це полями-зв'язками, і тип поля залежить від того, скільки об'єктів з кожного боку.
+
+### `ForeignKey` — багато до одного
+
+Одна стаття має багато коментарів, один коментар належить одній статті. Поле оголошують на боці «багато» — тобто в `Comment`:
+
+```python
+# blog/models.py
+class Comment(models.Model):
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='comments',
+    )
+    author_name = models.CharField(max_length=80)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Коментар від {self.author_name}'
+```
+
+У базі з цього постане стовпець `post_id` у таблиці `blog_comment` — число, що вказує на рядок у `blog_post`. У Python доступ іде обома напрямками:
+
+```python
+# оболонка manage.py shell
+comment.post           # стаття цього коментаря — прямий доступ
+post.comments.all()    # усі коментарі статті — зворотний доступ
+```
+
+Питання, яке визначає бік: «один ____ має багато ____». Хто в другому пропуску — той і отримує `ForeignKey`.
+
+### `ManyToManyField` — багато до багатьох
+
+Фільм має кілька жанрів, і кожен жанр стосується багатьох фільмів. Жодна зі сторін не «головніша», тому поле ставлять на тій, з якої зручніше починати запит:
+
+```python
+# cinema/models.py
+from django.db import models
+
+
+class Genre(models.Model):
+    name = models.CharField(max_length=60, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Movie(models.Model):
+    title = models.CharField(max_length=200)
+    genres = models.ManyToManyField(Genre, blank=True, related_name='movies')
+```
+
+```python
+# оболонка manage.py shell
+movie.genres.add(sci_fi)
+movie.genres.remove(sci_fi)
+movie.genres.all()
+sci_fi.movies.all()
+```
+
+Окремого стовпця тут немає: Django створює третю, проміжну таблицю з двома зовнішніми ключами й обслуговує її сам.
+
+`blank=True` стосується лише форм: у базі many-to-many не буває обов'язковим, бо зв'язки записуються в окрему таблицю вже після створення об'єкта.
+
+### `OneToOneField` — один до одного
+
+Один користувач — один профіль. Це той самий `ForeignKey`, але з унікальністю: другий рядок на того самого користувача база не прийме.
+
+```python
+# accounts/models.py
+from django.conf import settings
+from django.db import models
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='profile',
+    )
+    bio = models.TextField(blank=True)
+    avatar = models.ImageField(upload_to='avatars/', blank=True)
+```
+
+Основний випадок — розширити чужу модель власними полями, не змінюючи її. Зворотний доступ повертає один об'єкт, а не набір: `user.profile`, а не `user.profile.all()`.
+
+### Який зв'язок обрати
+
+| Зв'язок | Приклад | Де оголошують поле | Зворотний доступ |
+|---|---|---|---|
+| `ForeignKey` | багато коментарів — одна стаття | на боці «багато» (`Comment`) | набір: `post.comments.all()` |
+| `ManyToManyField` | фільми й жанри | на будь-якому боці | набір: `genre.movies.all()` |
+| `OneToOneField` | користувач і профіль | на боці розширення (`Profile`) | один об'єкт: `user.profile` |
+
+> <i class="bi bi-info-circle"></i> Для будь-якого зв'язку з користувачем беруть `settings.AUTH_USER_MODEL`, а не прямий імпорт `User`: проєкт може перейти на власну модель користувача, і код лишиться робочим.
+
+### `related_name` — зворотний доступ
+
+Поле-зв'язок оголошують на одному боці, а зворотний доступ Django створює автоматично. Ім'я цього доступу і задає `related_name`:
+
+```python
+# оболонка manage.py shell
+post.comments.all()      # коментарі статті      (related_name='comments')
+movie.reviews.all()      # рецензії фільму       (related_name='reviews')
+user.posts.all()         # статті автора         (related_name='posts')
+```
+
+Без `related_name` доступ називався б `post.comment_set.all()`. Явне ім'я робить запити читабельними, а в разі кількох зв'язків на ту саму модель — необхідним: два `ForeignKey` на `User` без різних `related_name` дають помилку `reverse accessor clashes` ще на `makemigrations`.
+
+### `on_delete` — доля дочірніх записів
+
+Аргумент обов'язковий для `ForeignKey` і `OneToOneField`: Django не обирає поведінку за тебе.
+
+| Значення | Що станеться з дочірніми записами | Типовий випадок |
+|---|---|---|
+| `CASCADE` | видаляються разом із батьківським | коментар без статті не має сенсу |
+| `PROTECT` | видалення батьківського забороняється | товар, що фігурує в замовленні |
+| `SET_NULL` | зв'язок стає `NULL` (потрібен `null=True`) | стаття лишається після видалення автора |
+| `SET_DEFAULT` | підставляється значення за замовчуванням | категорія «Без категорії» |
+| `DO_NOTHING` | нічого; цілісність лишається на базі | майже ніколи, лише з власними обмеженнями БД |
+
+```python
+# blog/models.py
+post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+
+# shop/models.py
+product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='order_items')
+
+# blog/models.py
+author = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    on_delete=models.SET_NULL,
+    null=True, blank=True,
+    related_name='posts',
+)
+```
+
+Питання, яке допомагає обрати: чи має дочірній запис сенс без батьківського? Якщо ні — `CASCADE`; якщо запис цінний сам по собі — `SET_NULL`; якщо видалення батьківського є помилкою — `PROTECT`.
+
+### `through` — коли на зв'язку є власні дані
+
+`ManyToManyField` підходить, поки зв'язок не має власних властивостей. Щойно виникає питання «а де зберегти кількість / ціну на момент купівлі / дату додавання», проміжну таблицю описують власною моделлю й передають її в `through`:
+
+```python
+# shop/models.py
+products = models.ManyToManyField(Product, through='OrderItem', related_name='orders')
+```
+
+Проміжна модель — це звичайна модель із двома `ForeignKey` і власними полями. Повний приклад — нижче, у розділі «Замовлення: many-to-many з даними на зв'язку».
+
+> <i class="bi bi-exclamation-triangle"></i> Після `through` метод `.add()` перестає працювати: `Cannot use add() on a ManyToManyField which specifies an intermediary model`. Записи створюють через проміжну модель явно.
+
+## Від класу до таблиці: міграції
+
+### `makemigrations` і `migrate`
 
 ```bash
 python manage.py makemigrations
@@ -83,7 +242,7 @@ python manage.py migrate
 
 Ситуації, коли міграція не проходить (нове обов'язкове поле, обмеження на таблиці з дублікатами), відкат і зміна самих даних — в уроці «Міграції».
 
-### 7. Реєстрація в адмін-панелі
+### Реєстрація в адмін-панелі
 
 ```python
 # blog/admin.py
@@ -99,7 +258,7 @@ class PostAdmin(admin.ModelAdmin):
 
 Крок необов'язковий: він впливає лише на інтерфейс `/admin`, а не на таблицю.
 
-## Три різні «реєстрації»
+### Три різні «реєстрації»
 
 Слово «зареєструвати» в Django означає три різні дії, і їх часто плутають:
 
@@ -139,7 +298,7 @@ class Book(TimeStampedModel):
 
 Стовпці `created_at` і `updated_at` з'являться в таблиці `library_book`; окремої таблиці для `TimeStampedModel` не буде.
 
-## Приклади сутностей
+## Приклади моделей цілком
 
 ### Стаття: статуси, slug, автор
 
@@ -179,7 +338,6 @@ class Post(TimeStampedModel):
 - `SlugField(unique=True)` зберігає придатну для адреси форму заголовка (`django-z-nulya`); унікальність потрібна, бо slug стає частиною URL.
 - `TextChoices` описує три речі одним оголошенням: значення в базі (`'draft'`), константу в коді (`Post.Status.DRAFT`) і підпис в інтерфейсі («Чернетка»).
 - `null=True, blank=True` у `published_at`: чернетка ще не має дати публікації. `null` дозволяє порожнє значення в базі, `blank` — у формах.
-- Зв'язок із користувачем описують через `settings.AUTH_USER_MODEL`: прямий імпорт `User` ламається, якщо проєкт перейде на власну модель користувача.
 
 ### Книга: унікальне поле й «голий» many-to-many
 
@@ -276,52 +434,11 @@ class Order(TimeStampedModel):
 
 - `price_at_purchase` зберігає ціну окремо від `Product.price`, бо ціна товару згодом зміниться, а сума замовлення має лишитися історичною.
 - `on_delete=models.PROTECT` не дає видалити товар, який фігурує в замовленнях.
-- Критерій вибору: зв'язок без власних даних — `ManyToManyField`; щойно виникає питання «а де зберегти властивість самого зв'язку» — потрібна `through`-модель.
-
-## related_name
-
-`ForeignKey` оголошують на дочірньому боці, а зворотний доступ Django створює автоматично:
-
-```python
-# оболонка manage.py shell
-movie.reviews.all()      # усі рецензії фільму    (related_name='reviews')
-order.items.all()        # позиції замовлення     (related_name='items')
-user.posts.all()         # статті автора          (related_name='posts')
-```
-
-Без `related_name` доступ називався б `movie.review_set.all()`. Явне ім'я робить запити читабельними, а в разі кількох зв'язків на ту саму модель — необхідним: два `ForeignKey` на `User` без різних `related_name` дають помилку `reverse accessor clashes` ще на `makemigrations`.
-
-## on_delete
-
-Аргумент обов'язковий: Django не обирає поведінку за тебе.
-
-| Значення | Що станеться з дочірніми записами | Типовий випадок |
-|---|---|---|
-| `CASCADE` | видаляються разом із батьківським | коментар без статті не має сенсу |
-| `PROTECT` | видалення батьківського забороняється | товар, що фігурує в замовленні |
-| `SET_NULL` | зв'язок стає `NULL` (потрібен `null=True`) | стаття лишається після видалення автора |
-| `SET_DEFAULT` | підставляється значення за замовчуванням | категорія «Без категорії» |
-| `DO_NOTHING` | нічого; цілісність лишається на базі | майже ніколи, лише з власними обмеженнями БД |
-
-```python
-# blog/models.py
-post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
-
-# shop/models.py
-product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='order_items')
-
-# blog/models.py
-author = models.ForeignKey(
-    settings.AUTH_USER_MODEL,
-    on_delete=models.SET_NULL,
-    null=True, blank=True,
-    related_name='posts',
-)
-```
-
-Питання, яке допомагає обрати: чи має дочірній запис сенс без батьківського? Якщо ні — `CASCADE`; якщо запис цінний сам по собі — `SET_NULL`; якщо видалення батьківського є помилкою — `PROTECT`.
+- Зв'язок «замовлення — товар» має власні дані, тому описаний `through`-моделлю, а не голим `ManyToManyField`.
 
 ## Обмеження на рівні бази
+
+### `UniqueConstraint` і `CheckConstraint`
 
 Обмеження описують у `Meta.constraints`. На відміну від валідаторів, вони перетворюються на правила самої бази, тому діють навіть при прямому `objects.create()` і при паралельних запитах.
 
@@ -415,7 +532,7 @@ class Discount(models.Model):
 
 - `__str__` — у кожній моделі.
 - `Meta.ordering` — щоб порядок записів був передбачуваним.
-- `related_name` — для кожного `ForeignKey` і `ManyToManyField`.
+- `related_name` — для кожного `ForeignKey`, `ManyToManyField` і `OneToOneField`.
 - `TextChoices` замість рядкових констант у `choices`.
 - Спільні поля — в абстрактну базову модель.
 - Зв'язок із користувачем — через `settings.AUTH_USER_MODEL`.
@@ -430,6 +547,7 @@ class Discount(models.Model):
 | Змінено модель без `makemigrations` і `migrate` | Клас описує одне, таблиця містить інше: запити падають із `no such column` |
 | Застосунку немає в `INSTALLED_APPS` | `makemigrations` відповідає `No changes detected`, хоча модель написана |
 | Немає `__str__` | Списки в адмінці й у формах складаються з `Book object (1)` |
+| `ForeignKey` оголошений не на тому боці | Стаття отримує один коментар замість багатьох; поле ставлять на боці «багато» |
 | `SET_NULL` без `null=True` | Помилка ще на `makemigrations`: полю немає куди записати порожнечу |
 | Однакові або відсутні `related_name` для двох зв'язків на одну модель | `reverse accessor clashes` — Django не може створити два однойменні зворотні доступи |
 | `null=True` на `CharField` чи `TextField` | З'являються два способи означати порожнечу (`''` і `NULL`); для рядків достатньо `blank=True` |
@@ -439,13 +557,14 @@ class Discount(models.Model):
 
 ## Підсумок
 
-- Іменник предметної області стає моделлю, властивість — полем, зв'язок — `ForeignKey` або `ManyToManyField`.
-- Шлях моделі: клас у `models.py` → поля → `__str__` → `Meta` → `makemigrations` → `migrate` → за потреби реєстрація в адмінці.
-- Таблиця з'являється від міграцій, а не від реєстрації в адмін-панелі; сама модель стає видимою лише через `INSTALLED_APPS`.
-- Спільні поля виносять в абстрактну модель (`abstract = True`) — вона не створює власної таблиці.
+- Іменник предметної області стає моделлю, властивість — полем, зв'язок — полем-зв'язком.
+- Шлях моделі: клас у `models.py` → поля → `__str__` → `Meta` → зв'язки → `makemigrations` → `migrate` → за потреби реєстрація в адмінці.
+- `ForeignKey` оголошують на боці «багато», `OneToOneField` — на боці розширення, `ManyToManyField` — на будь-якому.
 - `related_name` дає читабельний зворотний доступ і рятує від конфлікту кількох зв'язків на одну модель.
 - `on_delete` обирають за питанням «чи має сенс дочірній запис без батьківського»; `SET_NULL` завжди в парі з `null=True`.
 - M2M без даних — `ManyToManyField`, з даними на зв'язку — `through`-модель.
+- Таблиця з'являється від міграцій, а не від реєстрації в адмін-панелі; сама модель стає видимою лише через `INSTALLED_APPS`.
+- Спільні поля виносять в абстрактну модель (`abstract = True`) — вона не створює власної таблиці.
 - Валідатори працюють у формах, `constraints` — у базі; критичні інваріанти описують обмеженнями.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/db/models/" target="_blank" rel="noopener">Models <i class="bi bi-box-arrow-up-right"></i></a></div></div>
