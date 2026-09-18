@@ -19,6 +19,12 @@ function app() {
         currentTopicMeta: null,    // метадані поточної теми
         renderedContent: '',       // зрендерена теорія (HTML з Markdown)
 
+        // Зміст уроку (підрозділи) — будується з заголовків h2/h3 теорії
+        toc: [],                   // [{ id, level, num, text }]
+        activeSection: null,       // id підрозділу, який зараз на екрані
+        tocOpen: false,            // розгорнутий «Зміст уроку» на вузьких екранах
+        _spyQueued: false,         // throttle для scroll-spy
+
         activeTab: 'theory',       // theory | quiz | exercise
 
         // Quiz
@@ -63,6 +69,16 @@ function app() {
             // Hash routing
             window.addEventListener('hashchange', () => this.handleHash());
 
+            // Scroll-spy: підсвітити підрозділ, який зараз на екрані
+            window.addEventListener('scroll', () => {
+                if (this._spyQueued) return;
+                this._spyQueued = true;
+                requestAnimationFrame(() => {
+                    this._spyQueued = false;
+                    this.updateActiveSection();
+                });
+            }, { passive: true });
+
             // Load topic list
             try {
                 const resp = await fetch('content/topics.json');
@@ -98,6 +114,76 @@ function app() {
             }
         },
 
+        // ========== ЗМІСТ УРОКУ ==========
+        // Читає заголовки зрендереної теорії і складає з них список підрозділів.
+        // h2 — розділ (нумерується), h3 — підрозділ усередині нього.
+        buildToc() {
+            const root = document.getElementById('theory-content');
+            if (!root) { this.toc = []; return; }
+
+            const items = [];
+            let num = 0;
+            root.querySelectorAll('h2, h3').forEach((el, i) => {
+                const level = el.tagName === 'H3' ? 3 : 2;
+                if (level === 2) num++;
+                el.id = `sec-${i}`;
+                items.push({
+                    id: el.id,
+                    level,
+                    num: level === 2 ? num : null,
+                    text: el.textContent.trim(),
+                });
+            });
+
+            this.toc = items;
+            this.activeSection = items.length ? items[0].id : null;
+        },
+
+        // Останній заголовок, який уже пройшов верх екрана
+        updateActiveSection() {
+            if (!this.toc.length) return;
+
+            let current = this.toc[0].id;
+            for (const item of this.toc) {
+                const el = document.getElementById(item.id);
+                if (!el) continue;
+                if (el.getBoundingClientRect().top > 110) break;
+                current = item.id;
+            }
+
+            // біля самого низу сторінки активним лишається останній підрозділ
+            if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 40) {
+                current = this.toc[this.toc.length - 1].id;
+            }
+
+            this.activeSection = current;
+        },
+
+        scrollToSection(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            this.tocOpen = false;
+            this.activeSection = id;
+
+            const before = window.scrollY;
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Плавна анімація не запускається у частині середовищ (фонова вкладка,
+            // вимкнена анімація в системі) — тоді переходимо миттєво, щоб клік не лишався без ефекту.
+            setTimeout(() => {
+                if (window.scrollY === before) {
+                    el.scrollIntoView({ behavior: 'instant', block: 'start' });
+                }
+            }, 400);
+        },
+
+        // Підпис активного підрозділу для згорнутого «Змісту» на вузьких екранах
+        get activeSectionLabel() {
+            const item = this.toc.find(t => t.id === this.activeSection);
+            return item ? item.text : 'Зміст уроку';
+        },
+
         // ========== ROUTING ==========
         handleHash() {
             const hash = window.location.hash.slice(1);  // remove #
@@ -127,6 +213,9 @@ function app() {
             this.activeTab = 'theory';
             this.sidebarOpen = false;
             this.renderedContent = '<p class="text-slate-500">Завантаження...</p>';
+            this.toc = [];
+            this.activeSection = null;
+            this.tocOpen = false;
             this.quiz = null;
             this.exercises = [];
             this.currentExerciseIndex = 0;
@@ -146,6 +235,7 @@ function app() {
                     // syntax highlight after Alpine renders
                     this.$nextTick(() => {
                         document.querySelectorAll('#theory-content pre code').forEach(b => hljs.highlightElement(b));
+                        this.buildToc();
                     });
                 } else {
                     this.renderedContent = '<p class="text-amber-600">Контент для цієї теми ще не готовий.</p>';

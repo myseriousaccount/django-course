@@ -235,3 +235,65 @@ textarea[spellcheck="false"] { line-height: 1.6; tab-size: 4; }
 .dark .dj-docs a { color: #44b78b; }
 .dj-docs a:hover { text-decoration: underline; }
 .dj-docs a i { font-size: 0.8em; }
+
+/* ===== Зміст уроку (підрозділи) ===== */
+.dj-toc {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    border-left: 2px solid rgba(12, 75, 51, 0.12);
+}
+.dark .dj-toc { border-left-color: rgba(68, 183, 139, 0.15); }
+
+.dj-toc a {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    padding: 0.35rem 0.6rem;
+    margin-left: -2px;
+    border-left: 2px solid transparent;
+    color: #3d5449;
+    text-decoration: none;
+    line-height: 1.35;
+    transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+.dark .dj-toc a { color: #93a99e; }
+.dj-toc a:hover {
+    color: #0c4b33;
+    background: rgba(12, 75, 51, 0.04);
+}
+.dark .dj-toc a:hover { color: #86ccab; background: rgba(68, 183, 139, 0.07); }
+
+/* Розділ (h2) — нумерований, помітніший */
+.dj-toc-main { font-size: 0.8125rem; font-weight: 600; }
+
+/* Підрозділ (h3) — з відступом, тонший */
+.dj-toc-sub {
+    font-size: 0.78125rem;
+    font-weight: 400;
+    padding-left: 1.7rem !important;
+}
+
+/* Номер розділу */
+.dj-toc-num {
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', Menlo, monospace;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #44b78b;
+}
+
+/* Активний — той, що зараз на екрані */
+.dj-toc-active {
+    border-left-color: #44b78b !important;
+    color: #0c4b33 !important;
+    background: rgba(68, 183, 139, 0.09);
+    font-weight: 700;
+}
+.dark .dj-toc-active {
+    color: #86ccab !important;
+    background: rgba(68, 183, 139, 0.12);
+}
+
+/* Скрол усередині липкого рейла — тонший */
+.dj-toc-rail::-webkit-scrollbar { width: 5px; }

@@ -15,6 +15,10 @@
             darkMode: 'class',
             theme: {
                 extend: {
+                    screens: {
+                        // окремий поріг для правого рейла «Зміст уроку»
+                        toc: '1200px'
+                    },
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
                         mono: ['JetBrains Mono', 'Menlo', 'monospace']
@@ -59,7 +63,7 @@
 
     <!-- Header — фірмовий темно-зелений Django -->
     <header class="sticky top-0 z-30 bg-django-800/95 backdrop-blur border-b-2 border-django-400/60 text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <div class="max-w-[86rem] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">
                 <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 rounded-lg hover:bg-white/10" aria-label="Меню">
                     <i class="bi bi-list text-2xl leading-none"></i>
@@ -89,7 +93,7 @@
         </div>
     </header>
 
-    <div class="max-w-7xl w-full mx-auto flex flex-1">
+    <div class="max-w-[86rem] w-full mx-auto flex flex-1">
 
         <!-- Sidebar -->
         <aside
@@ -139,7 +143,7 @@
         <div x-show="sidebarOpen && windowWidth < 1024" @click="sidebarOpen = false" class="fixed inset-0 bg-black/40 z-10 lg:hidden" x-transition.opacity></div>
 
         <!-- Main content -->
-        <main class="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
+        <main class="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 toc:px-6 py-6 lg:py-10">
 
             <!-- Home page -->
             <div x-show="!currentTopic" class="max-w-3xl mx-auto">
@@ -209,6 +213,30 @@
                     <p x-show="currentTopicMeta?.summary" class="mt-2 text-lg text-slate-600 dark:text-slate-400" x-text="currentTopicMeta?.summary"></p>
                 </div>
 
+                <!-- Зміст уроку — згорнутий варіант для вузьких екранів -->
+                <div x-show="toc.length" class="toc:hidden mb-5">
+                    <button @click="tocOpen = !tocOpen"
+                            class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white dark:bg-[#0b1f17] border border-django-200/70 dark:border-django-900 text-left">
+                        <span class="flex items-center gap-2 min-w-0">
+                            <i class="bi bi-list-nested text-django-600 dark:text-django-400"></i>
+                            <span class="text-xs uppercase tracking-widest font-bold text-django-600 dark:text-django-400 shrink-0">Зміст</span>
+                            <span class="text-sm text-slate-500 dark:text-slate-400 truncate" x-text="activeSectionLabel"></span>
+                        </span>
+                        <i class="bi text-django-600 dark:text-django-400 shrink-0" :class="tocOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                    </button>
+
+                    <nav x-show="tocOpen" x-transition
+                         class="dj-toc mt-2 p-3 rounded-xl bg-white dark:bg-[#0b1f17] border border-django-200/70 dark:border-django-900">
+                        <template x-for="item in toc" :key="item.id">
+                            <a href="#" @click.prevent="scrollToSection(item.id)"
+                               :class="[item.level === 3 ? 'dj-toc-sub' : 'dj-toc-main', activeSection === item.id ? 'dj-toc-active' : '']">
+                                <span x-show="item.num" class="dj-toc-num" x-text="item.num"></span>
+                                <span x-text="item.text"></span>
+                            </a>
+                        </template>
+                    </nav>
+                </div>
+
                 <!-- THEORY -->
                 <div class="dj-card prose prose-slate dark:prose-invert max-w-none">
                     <div x-html="renderedContent" id="theory-content"></div>
@@ -237,11 +265,29 @@
             </article>
 
         </main>
+
+        <!-- Зміст уроку — липкий правий рейл (xl і ширше) -->
+        <aside x-show="currentTopic && toc.length" class="hidden toc:block w-52 shrink-0 pr-6 py-10">
+            <div class="sticky top-[85px] max-h-[calc(100vh-110px)] overflow-y-auto pb-4">
+                <p class="text-[11px] uppercase tracking-widest text-django-600 dark:text-django-400 font-bold mb-3">
+                    Зміст уроку
+                </p>
+                <nav class="dj-toc">
+                    <template x-for="item in toc" :key="item.id">
+                        <a href="#" @click.prevent="scrollToSection(item.id)"
+                           :class="[item.level === 3 ? 'dj-toc-sub' : 'dj-toc-main', activeSection === item.id ? 'dj-toc-active' : '']">
+                            <span x-show="item.num" class="dj-toc-num" x-text="item.num"></span>
+                            <span x-text="item.text"></span>
+                        </a>
+                    </template>
+                </nav>
+            </div>
+        </aside>
     </div>
 
     <!-- Footer -->
     <footer class="bg-django-800 text-django-200 border-t-2 border-django-400/40 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+        <div class="max-w-[86rem] mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
             <div class="flex items-center gap-2">
                 <span class="inline-flex items-center rounded-md bg-django-600 px-2 py-0.5 font-mono text-xs font-bold text-white">django</span>
                 <span>Навчальна платформа</span>
