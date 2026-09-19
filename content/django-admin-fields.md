@@ -62,6 +62,22 @@ class OrderAdmin(admin.ModelAdmin):
 | `autocomplete_fields` | FK / M2M | сотні+ (є `search_fields` у цільового admin) |
 | `raw_id_fields` | FK / M2M | тисячі+ записів |
 
+### Звузити сам список: `formfield_for_foreignkey()`
+
+Чотири способи вище — про те, **як виглядає** вибір. Коли треба звузити **сам перелік варіантів** (лише активні категорії, лише товари поточного продавця), перевизначають `formfield_for_foreignkey()`:
+
+```python
+# shop/admin.py
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "category":
+            kwargs["queryset"] = Category.objects.filter(is_active=True)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+```
+
+`db_field.name` каже, яке саме поле зараз готується, тому підміняєш `queryset` лише для потрібного. Метод має доступ і до `request` — список можна звузити й за користувачем: `Category.objects.filter(owner=request.user)`.
+
 ## Поля на сторінці об'єкта
 
 Набір опцій `ModelAdmin`, які змінюють вигляд і поведінку окремих полів форми.
@@ -190,7 +206,7 @@ class Product(models.Model):
 
 ## Підсумок
 
-- Зв'язки обирай за розміром таблиці: `<select>` (мало) → `filter_horizontal` (M2M, десятки) → `autocomplete_fields` (сотні, з `search_fields`) → `raw_id_fields` (тисячі).
+- Зв'язки обирай за розміром таблиці: `<select>` (мало) → `filter_horizontal` (M2M, десятки) → `autocomplete_fields` (сотні, з `search_fields`) → `raw_id_fields` (тисячі); `formfield_for_foreignkey()` звужує сам перелік варіантів, а не лише вигляд поля.
 - `radio_fields` — радіо замість списку для `choices`; `prepopulated_fields` — slug із title.
 - `readonly_fields` + `@admin.display` — обчислені/незмінні поля, зокрема **прев'ю зображень** через `format_html`.
 - `formfield_overrides` — змінити віджет для типу поля (напр. більший `Textarea`); дати вже мають календар, `date_hierarchy` — навігація за датами.

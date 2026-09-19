@@ -147,11 +147,11 @@
 
     { "id": "django-admin-customization", "section": "users", "icon": "bi-tools",
       "title": "Адмін-панель",
-      "summary": "ModelAdmin: list_display, list_filter, search_fields, @admin.register, inlines, actions, fieldsets. Як зробити вбудовану адмін-панель зручною." },
+      "summary": "ModelAdmin: list_display, list_filter, search_fields, @admin.register, inlines, actions, fieldsets, UserAdmin. get_queryset/save_model/has_*_permission і власний SimpleListFilter для нестандартних кейсів." },
 
     { "id": "django-admin-fields", "section": "users", "icon": "bi-sliders",
       "title": "Адмінка: зручні поля й віджети",
-      "summary": "Нестандартні поля у формі: filter_horizontal/autocomplete/raw_id для зв'язків, radio_fields, prepopulated_fields, прев'ю зображень, formfield_overrides, календар дат." },
+      "summary": "Нестандартні поля у формі: filter_horizontal/autocomplete/raw_id для зв'язків, formfield_for_foreignkey для звуження списку, radio_fields, prepopulated_fields, прев'ю зображень, formfield_overrides, календар дат." },
 
     { "id": "django-contrib-batteries", "section": "users", "icon": "bi-battery-charging",
       "title": "Вбудовані застосунки",

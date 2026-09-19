@@ -162,6 +162,62 @@ class MovieAdmin(admin.ModelAdmin):
 
 Кожен елемент — пара `(назва_секції, {опції})`. `"classes": ("collapse",)` робить секцію згортуваною — зручно ховати рідковживані поля.
 
+### `UserAdmin`: `fieldsets` і `add_fieldsets` — два різних набори
+
+Стосується проєктів із власною моделлю користувача (`AbstractUser` + `AUTH_USER_MODEL`). Щойно до `User` додають своє поле, стандартний `UserAdmin` теж розширюють — інакше нове поле в панелі просто не з'явиться:
+
+```python
+# accounts/models.py
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+
+
+class User(AbstractUser):
+    phone = models.CharField('Телефон', max_length=20, blank=True)
+```
+
+```python
+# accounts/forms.py
+from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
+
+from .models import User
+
+
+class UserCreationForm(BaseUserCreationForm):
+    class Meta(BaseUserCreationForm.Meta):
+        model = User
+        fields = BaseUserCreationForm.Meta.fields + ('phone',)
+```
+
+```python
+# accounts/admin.py
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+
+from .forms import UserCreationForm
+from .models import User
+
+
+@admin.register(User)
+class UserAdmin(BaseUserAdmin):
+    add_form = UserCreationForm
+    fieldsets = BaseUserAdmin.fieldsets + (
+        ('Додатково', {'fields': ('phone',)}),
+    )
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (
+        ('Додатково', {'fields': ('phone',)}),
+    )
+```
+
+`UserAdmin` показує не одну форму, а дві, і в кожної свій набір полів:
+
+- **`fieldsets`** — сторінка **редагування** наявного користувача. Форма за замовчуванням (`UserChangeForm`) бере всі поля моделі сама, тому нове поле в `fieldsets` побачить одразу — власної форми не треба.
+- **`add_fieldsets`** — сторінка **створення** нового користувача. Форма за замовчуванням (`UserCreationForm`) обмежує поля списком (`username` плюс `password1`/`password2`, бо хеша ще не існує), тому нове поле тут з'явиться, лише якщо дописати його в **обидва** місця: у `add_fieldsets` і в `Meta.fields` власної форми, призначеної `add_form`.
+
+Django не виводить один набір з іншого — це дві незалежні структури, і саме про друге місце найчастіше забувають.
+
+> <i class="bi bi-exclamation-triangle"></i> Поле, дописане лише в `add_fieldsets`, ламає сторінку «Додати користувача» помилкою `FieldError: 'UserAdmin.add_fieldsets' refers to field 'phone' that is missing from the form` — форма (`UserCreationForm`) про нього не знає, доки його немає в її `Meta.fields`.
+
 ### Окремо про `prepopulated_fields`
 
 `prepopulated_fields` автоматично формує значення одного поля з іншого прямо в браузері, поки ти друкуєш.
@@ -220,6 +276,37 @@ class BookAdmin(admin.ModelAdmin):
 
 Пов'язані дані редагують разом. Без цього кожен дочірній запис довелося б створювати окремою сторінкою, щоразу обираючи батьківський об'єкт зі списку.
 
+### Inline на чужій моделі: `Profile` на сторінці `User`
+
+На відміну від `fieldsets`/`add_fieldsets` вище (де мова про власну модель користувача), тут `User` лишається стандартним — просто на його сторінці з'являється пов'язаний `Profile` (`OneToOneField`, як в уроці «Наскрізний приклад: реєстрація»). Оскільки `UserAdmin` уже зареєстрований самим Django, свій варіант підключають через `unregister()` і повторну реєстрацію:
+
+```python
+# accounts/admin.py
+from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+
+from .models import Profile
+
+User = get_user_model()
+
+
+class ProfileInline(admin.StackedInline):
+    model = Profile
+    can_delete = False              # профіль не існує окремо від користувача
+    verbose_name_plural = "Профіль"
+
+
+class UserAdmin(BaseUserAdmin):
+    inlines = [ProfileInline]
+
+
+admin.site.unregister(User)         # спершу прибрати вбудований UserAdmin
+admin.site.register(User, UserAdmin)
+```
+
+Порядок важливий: `unregister()` мусить виконатись **до** `register()`, інакше Django кине помилку «модель уже зареєстрована».
+
 ## Дії над списком (`actions`)
 
 `actions` — це операції, які застосовують **одразу до кількох** позначених об'єктів через випадне меню над списком.
@@ -245,6 +332,128 @@ class PostAdmin(admin.ModelAdmin):
 
 Метод дії отримує `queryset` — усі позначені об'єкти — і робить із ними що треба (тут `update`). `message_user` показує повідомлення користувачу. Видалення позначених є вбудованою дією з коробки.
 
+## Свій код у ModelAdmin
+
+Опції вище — декларативні: список атрибутів, і Django сам будує сторінку. Чотири методи нижче — це вже код, який втручається в те, що адмін показує, зберігає чи дозволяє.
+
+### `get_queryset()`: що бачить адмін
+
+За замовчуванням адмін показує **всі** об'єкти моделі. Щоб звузити список — наприклад, менеджер бачить лише свої замовлення, а суперкористувач усі — перевизначають `get_queryset()`:
+
+```python
+# shop/models.py
+class Order(models.Model):
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders")
+    manager = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="managed_orders",
+    )
+    status = models.CharField(max_length=20, default="new")
+```
+
+```python
+# shop/admin.py
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ("id", "customer", "status")
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(manager=request.user)
+```
+
+`super().get_queryset(request)` дає базовий набір — той самий, що показав би `ModelAdmin` без змін. Фільтр накладають зверху, а не пишуть запит наново.
+
+> <i class="bi bi-info-circle"></i> Тут же підключають і `select_related`/`prefetch_related` для важких списків — той самий принцип, що й у view, розібраний в уроці «Оптимізація запитів».
+
+### `save_model()`: підставити дані при збереженні
+
+Хук, що спрацьовує щоразу, коли об'єкт зберігають **саме з адмінки** — зручно проставити поле, яке не показують у формі:
+
+```python
+# library/models.py
+class Book(models.Model):
+    title = models.CharField(max_length=200)
+    added_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="added_books",
+    )
+```
+
+```python
+# library/admin.py
+@admin.register(Book)
+class BookAdmin(admin.ModelAdmin):
+    list_display = ("title", "added_by")
+    readonly_fields = ("added_by",)
+
+    def save_model(self, request, obj, form, change):
+        if not change:                       # лише при створенні, не при кожному редагуванні
+            obj.added_by = request.user
+        super().save_model(request, obj, form, change)
+```
+
+`change` — `False` при створенні нового об'єкта, `True` при редагуванні наявного. Без цієї перевірки поле переписувалося б іменем того, хто останнім зберіг форму, а не того, хто справді додав книгу.
+
+### `has_add_permission` / `has_change_permission` / `has_delete_permission`: заборонити дію
+
+Три методи визначають, чи бачить користувач кнопку «Додати», «Зберегти» чи «Видалити» — незалежно від загальних прав Django. Типовий випадок — фінансовий запис, який ніхто, крім суперкористувача, не повинен видаляти:
+
+```python
+# shop/admin.py
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ("id", "customer", "status")
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(manager=request.user)
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+```
+
+`obj` — конкретний об'єкт (є значення на сторінці одного запису) або `None` (на сторінці списку, де перевіряють право загалом). Той самий прийом — заборонити зміну вже опублікованої статті: `has_change_permission` повертає `False`, якщо `obj and obj.is_published`.
+
+### Власний `SimpleListFilter`: фільтр не за полем
+
+`list_filter` (урок вище) фільтрує за значенням поля напряму. Коли умова обчислюється — «є в наявності» замість конкретного числа `count` — пишуть клас-фільтр:
+
+```python
+# shop/admin.py
+class InStockFilter(admin.SimpleListFilter):
+    title = "наявність"
+    parameter_name = "in_stock"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", "Є в наявності"),
+            ("no", "Немає в наявності"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.filter(count__gt=0)
+        if self.value() == "no":
+            return queryset.filter(count=0)
+        return queryset
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_filter = (InStockFilter,)
+```
+
+`lookups()` задає варіанти в боковій панелі, `queryset()` застосовує обраний. `self.value()` — рядок обраного варіанта (`"yes"`, `"no"` або `None`, якщо фільтр не активний).
+
 ## Типові помилки / Нюанси
 
 | Що не так | Наслідок і як правильно |
@@ -257,6 +466,10 @@ class PostAdmin(admin.ModelAdmin):
 | Список без `list_select_related` | Колонки зі зв'язаних моделей дають N+1 запитів на кожен рядок |
 | Обчислена колонка без `@admin.display` | У заголовку з'являється технічна назва методу |
 | Дія над списком без перевірки прав | `actions` виконуються масово; права перевіряють у самому методі дії |
+| Нове поле лише в `UserAdmin.add_fieldsets`, без власного `add_form` | `FieldError: refers to field ... that is missing from the form` на сторінці «Додати користувача» |
+| `register()` для `User` без попереднього `unregister()` | `AlreadyRegistered`: Django вже зареєстрував цю модель сам |
+| `get_queryset()` без `super().get_queryset(request)` | Втрачаються сортування й оптимізації `ModelAdmin` за замовчуванням — запит пишуть наново замість фільтра поверх базового |
+| `save_model()` без перевірки `change` | Поле на кшталт `added_by` переписується при кожному редагуванні, а не лише при створенні |
 
 ## Підсумок
 
@@ -264,8 +477,10 @@ class PostAdmin(admin.ModelAdmin):
 - Поведінку моделі описує клас **`ModelAdmin`**; сучасна конвенція реєстрації — декоратор **`@admin.register(Model)`** (еквівалент `admin.site.register`).
 - **Список:** `list_display` (колонки, зокрема методи через `@admin.display`), `list_filter`, `search_fields` (можна `__`), `ordering`, `list_editable`, `list_per_page`, `date_hierarchy`, `list_select_related`.
 - **Форма:** `fields`/`exclude`, `fieldsets` (групування з `collapse`), `readonly_fields`, `prepopulated_fields` (slug із title), `filter_horizontal` (M2M), `autocomplete_fields` (потребує `search_fields` у зв'язаної моделі), `save_on_top`/`save_as`.
-- **`inlines`** (`TabularInline` / `StackedInline`) редагують пов'язані об'єкти на одній сторінці — наприклад, `Chapter` усередині `Book`; опції `extra`, `max_num`, `show_change_link`.
+- **`UserAdmin`** для власної моделі користувача розширюють через `fieldsets` (редагування) **і** `add_fieldsets` (створення) — це два незалежних набори; нове поле в `add_fieldsets` вимагає ще й свого `add_form` з тим полем у `Meta.fields`.
+- **`inlines`** (`TabularInline` / `StackedInline`) редагують пов'язані об'єкти на одній сторінці — наприклад, `Chapter` усередині `Book`; опції `extra`, `max_num`, `show_change_link`. Для чужої моделі (`User`) — спершу `admin.site.unregister()`, потім реєстрація свого `UserAdmin` з `inlines`.
 - **`actions`** (`@admin.action`) — масові операції над позначеними об'єктами (напр. «Опублікувати позначені»).
+- Код замість атрибутів: **`get_queryset()`** звужує список (свої записи, `select_related`), **`save_model()`** підставляє дані при збереженні (перевіряй `change`, щоб не переписувати при кожному редагуванні), **`has_*_permission()`** забороняє додавання/зміну/видалення для конкретного користувача чи об'єкта, **`SimpleListFilter`** — фільтр за обчислюваною умовою, якої немає серед полів моделі.
 - Головна цінність: готове керування даними для не-програмістів **без написання власних CRUD-сторінок**.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/ref/contrib/admin/" target="_blank" rel="noopener">The Django admin site <i class="bi bi-box-arrow-up-right"></i></a></div></div>
