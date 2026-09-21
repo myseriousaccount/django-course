@@ -2,6 +2,8 @@
 
 Адмінка Django — це готова панель керування даними, яку ти отримуєш безкоштовно. Але «з коробки» вона показує лише голі назви об'єктів; цей урок про те, як перетворити її на зручний робочий інструмент для контент-менеджера, редактора чи бібліотекаря — за допомогою класу `ModelAdmin`. Приклади навмисно з **різних доменів** (блог, каталог книг, фільмотека), щоб ти бачила: налаштування ті самі, хоч дані різні.
 
+> <i class="bi bi-info-circle"></i> Щоб узагалі увійти на `/admin`, потрібен користувач із доступом. Команда `python manage.py createsuperuser` (запитає логін, email, пароль) — в уроці «Команди manage.py».
+
 ## Спершу — реєстрація моделі
 
 > **Реєстрація** — це дія, якою ти повідомляєш адмінці: «цю модель треба показувати й дозволити нею керувати». Незареєстрована модель в адмінці **не з'являється взагалі**.
@@ -332,6 +334,37 @@ class PostAdmin(admin.ModelAdmin):
 
 Метод дії отримує `queryset` — усі позначені об'єкти — і робить із ними що треба (тут `update`). `message_user` показує повідомлення користувачу. Видалення позначених є вбудованою дією з коробки.
 
+### Дія, що повертає файл: експорт у CSV
+
+Дії вище змінювали дані й лишалися на тій самій сторінці. Дія може й **повернути відповідь** — саме так у адмінці роблять експорт позначених рядків у CSV:
+
+```python
+# shop/admin.py
+import csv
+
+from django.http import HttpResponse
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ("name", "price", "count")
+    actions = ["export_as_csv"]
+
+    @admin.action(description="Експортувати позначене у CSV")
+    def export_as_csv(self, request, queryset):
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="products.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(["Назва", "Ціна", "Залишок"])          # заголовок таблиці
+        for product in queryset:
+            writer.writerow([product.name, product.price, product.count])
+
+        return response
+```
+
+Різниця з попередніми двома діями — у `return`. Коли метод дії повертає `HttpResponse`, Django віддає **цю відповідь** замість оновлення сторінки списку, і браузер починає завантаження файлу. `Content-Disposition: attachment` — саме той заголовок, що каже браузеру зберегти файл, а не показати вміст як текст.
+
 ## Свій код у ModelAdmin
 
 Опції вище — декларативні: список атрибутів, і Django сам будує сторінку. Чотири методи нижче — це вже код, який втручається в те, що адмін показує, зберігає чи дозволяє.
@@ -479,7 +512,7 @@ class ProductAdmin(admin.ModelAdmin):
 - **Форма:** `fields`/`exclude`, `fieldsets` (групування з `collapse`), `readonly_fields`, `prepopulated_fields` (slug із title), `filter_horizontal` (M2M), `autocomplete_fields` (потребує `search_fields` у зв'язаної моделі), `save_on_top`/`save_as`.
 - **`UserAdmin`** для власної моделі користувача розширюють через `fieldsets` (редагування) **і** `add_fieldsets` (створення) — це два незалежних набори; нове поле в `add_fieldsets` вимагає ще й свого `add_form` з тим полем у `Meta.fields`.
 - **`inlines`** (`TabularInline` / `StackedInline`) редагують пов'язані об'єкти на одній сторінці — наприклад, `Chapter` усередині `Book`; опції `extra`, `max_num`, `show_change_link`. Для чужої моделі (`User`) — спершу `admin.site.unregister()`, потім реєстрація свого `UserAdmin` з `inlines`.
-- **`actions`** (`@admin.action`) — масові операції над позначеними об'єктами (напр. «Опублікувати позначені»).
+- **`actions`** (`@admin.action`) — масові операції над позначеними об'єктами (напр. «Опублікувати позначені»); якщо метод дії повертає `HttpResponse` (напр. CSV), Django віддає її замість оновлення сторінки.
 - Код замість атрибутів: **`get_queryset()`** звужує список (свої записи, `select_related`), **`save_model()`** підставляє дані при збереженні (перевіряй `change`, щоб не переписувати при кожному редагуванні), **`has_*_permission()`** забороняє додавання/зміну/видалення для конкретного користувача чи об'єкта, **`SimpleListFilter`** — фільтр за обчислюваною умовою, якої немає серед полів моделі.
 - Головна цінність: готове керування даними для не-програмістів **без написання власних CRUD-сторінок**.
 

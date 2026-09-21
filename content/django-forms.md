@@ -324,6 +324,8 @@ def contact(request):
     return render(request, 'pages/contact.html', {'form': form})
 ```
 
+> <i class="bi bi-info-circle"></i> `send_mail()` сам нічого не надсилає — куди насправді йде лист (термінал у розробці чи реальний SMTP на проді), задає `EMAIL_BACKEND`. Розібрано в уроці «Settings: dev проти prod і секрети».
+
 > <i class="bi bi-info-circle"></i> `request.FILES` додають другим аргументом, лише якщо у формі є `FileField`/`ImageField` (наприклад, обкладинка статті). Для звичайних форм досить `request.POST`.
 
 ## Про form.save() у ModelForm

@@ -25,6 +25,37 @@ ALLOWED_HOSTS = []
 
 > <i class="bi bi-exclamation-triangle"></i> На проді `DEBUG` **завжди `False`**. Інакше будь-яка помилка покаже відвідувачу твій код, шляхи файлів і навіть фрагменти налаштувань — це серйозна діра безпеки. Django у своєму чеклісті деплою наголошує на цьому першим пунктом. Наслідок `DEBUG=False`: тобі треба самостійно зробити шаблони `404.html` і `500.html`, бо гарних сторінок-трейсбеків уже не буде.
 
+### Свої сторінки 404 і 500
+
+Коли `DEBUG = False`, замість трейсбека Django шукає шаблони `404.html` і `500.html` **у корені** папки шаблонів — не всередині якогось застосунку:
+
+```
+templates/
+├── base.html
+├── 404.html          ← сторінка «не знайдено»
+├── 500.html           ← сторінка «помилка сервера»
+└── blog/
+    └── post_list.html
+```
+
+Django знаходить їх за іменем автоматично — реєструвати чи підключати нічого не треба. Шаблон отримує мінімальний контекст, тому найпростіше зробити його самодостатнім, без `{% extends %}` на важкий `base.html`:
+
+```html
+{# templates/404.html #}
+<!DOCTYPE html>
+<html lang="uk">
+<head><meta charset="UTF-8"><title>Сторінку не знайдено</title></head>
+<body>
+    <h1>404 — такої сторінки немає</h1>
+    <a href="/">На головну</a>
+</body>
+</html>
+```
+
+`500.html` пишуть так само — але без жодних звернень до бази чи `context`: якщо сама помилка сталася через проблему з базою, сторінка помилки не повинна залежати від того самого, що щойно впало.
+
+> <i class="bi bi-info-circle"></i> Побачити свою `404.html`, не вимикаючи `DEBUG` на весь проєкт, можна двома шляхами: `handler404`/`handler500` у головному `urls.py` (Django викличе твій view напряму) або тимчасово `DEBUG = False` з непорожнім `ALLOWED_HOSTS` локально. Найпростіше для перевірки — відкрити неіснуючу адресу з `DEBUG = False`.
+
 ### ALLOWED_HOSTS
 
 Коли `DEBUG = False`, Django вимагає список доменів, з яких дозволено приймати запити:
@@ -95,6 +126,42 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
 > <i class="bi bi-info-circle"></i> `.env` лежить локально й на сервері (з різними значеннями), але **ніколи** в git. У `.gitignore` додають рядок `.env`. Так секрети розробки й проду різні, а в коді — **однаковий** `settings.py`.
 
+## Надсилання пошти: EMAIL_BACKEND
+
+`send_mail()` (уроки «Форми», «Сигнали») сам нічого не надсилає — він передає лист **бекенду**, а який бекенд підключений, каже `EMAIL_BACKEND` у `settings.py`. Це ще один параметр, що обов'язково відрізняється між dev і prod:
+
+```python
+# config/settings.py — розробка: лист друкується в термінал, а не йде нікуди
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+```
+
+```python
+# config/settings.py — продакшн: реальна відправка через SMTP
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')      # секрет — з env, як SECRET_KEY вище
+DEFAULT_FROM_EMAIL = 'noreply@myblog.com'
+```
+
+`console.EmailBackend` — типовий вибір для розробки: лист не йде нікуди, а виводиться прямо в термінал, де запущено `runserver`. Це дає перевірити повний цикл (форма → `send_mail()` → лист) без реального поштового сервера й без ризику розіслати тестові листи справжнім адресам.
+
+```python
+# pages/views.py
+from django.core.mail import send_mail
+
+send_mail(
+    'Тема листа',
+    'Текст листа',
+    None,                          # None → бере DEFAULT_FROM_EMAIL із settings
+    ['user@example.com'],
+)
+```
+
+> <i class="bi bi-info-circle"></i> `send_mail()` вистачає для простого тексту. Коли потрібен HTML-лист, вкладення або кілька одержувачів із різними заголовками — беруть `EmailMessage`/`EmailMultiAlternatives` з того самого `django.core.mail`: `send_mail()` — зручна обгортка саме над ними.
+
 ## Як розділяють dev і prod налаштування
 
 Коли відмінностей багато, `settings.py` ділять. Три поширені підходи:
@@ -128,12 +195,16 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 | `.env` доданий у git | Сенс винесення секретів зникає; файл додають у `.gitignore`, а поруч тримають `.env.example` без значень |
 | `os.environ['KEY']` без запасного значення в розробці | Проєкт не стартує на чужій машині; для локальних значень використовують `os.environ.get(..., default)` |
 | Різні налаштування правлять умовами `if DEBUG:` по всьому файлу | Логіка розповзається; середовища розділяють окремими модулями налаштувань |
+| `404.html`/`500.html` усередині папки застосунку | Django шукає їх у корені шаблонів; там, де лежить `base.html`, а не в `blog/templates/blog/` |
+| `EMAIL_BACKEND` не заданий, а лист «не приходить» | У розробці типово стоїть `console.EmailBackend` — лист не губиться, а друкується в термінал |
 
 ## Підсумок
 
 - `DEBUG`, `ALLOWED_HOSTS`, `SECRET_KEY` поводяться по-різному в dev і prod; на проді: `DEBUG=False`, заповнений `ALLOWED_HOSTS`, секретний ключ.
 - `DEBUG=True` показує детальний трейсбек (зручно в dev, небезпечно на проді); `ALLOWED_HOSTS` захищає від підробленого `Host`; `SECRET_KEY` — основа всієї криптографії Django.
 - Префікс `django-insecure-` — підказка, що ключ лише для розробки.
+- `DEBUG=False` вимагає власні `404.html`/`500.html` у корені шаблонів — Django знаходить їх сам, за іменем.
+- `EMAIL_BACKEND` теж різний у dev/prod: `console.EmailBackend` друкує лист у термінал, `smtp.EmailBackend` надсилає реально; `send_mail()` лише передає лист бекенду.
 - **Секрети — не в коді/git.** Код *читає* їх з env-змінних (`os.environ`); env-змінні завжди рядки (`== 'True'`, `.split(',')`). Локально зручно через `.env` + `python-dotenv` (файл у `.gitignore`).
 - Розділяти dev/prod можна через env-змінні (просто) або через папку `settings/` з `base/dev/prod` + `DJANGO_SETTINGS_MODULE` (для великих проєктів).
 

@@ -261,6 +261,58 @@ LOGIN_REDIRECT_URL = 'home'
 
 > <i class="bi bi-info-circle"></i> Можна вказувати як URL (`/login/`), так і **ім'я маршруту** (`'login'`). Другий варіант надійніший: якщо зміниш адресу в `urls.py`, налаштування залишиться робочим.
 
+## Скидання пароля («забули пароль?»)
+
+`set_password()` вище змінює пароль користувачу, який **уже увійшов**. Для «забув пароль» потрібен інший флоу: лист із одноразовим посиланням, за яким можна поставити новий пароль, не знаючи старого. Писати це самій не треба — Django видає готовий комплект із чотирьох views:
+
+```python
+# config/urls.py
+from django.contrib.auth import views as auth_views
+from django.urls import path
+
+urlpatterns = [
+    path('reset-password/', auth_views.PasswordResetView.as_view(), name='password_reset'),
+    path('reset-password/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('reset-password/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('reset-password/complete/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+]
+```
+
+Чотири адреси — чотири кроки одного сценарію:
+
+| View | Що показує | Коли відкривається |
+|---|---|---|
+| `PasswordResetView` | форма «введи email» | користувач натиснув «Забули пароль?» |
+| `PasswordResetDoneView` | «лист надіслано, перевір пошту» | одразу після відправлення форми |
+| `PasswordResetConfirmView` | форма нового пароля | користувач перейшов за посиланням із листа |
+| `PasswordResetCompleteView` | «пароль змінено, можна увійти» | після успішного збереження нового пароля |
+
+Посилання в листі містить `uidb64` (закодований id користувача) і `token` — одноразовий, що прив'язаний до поточного хеша пароля: щойно пароль змінили, старе посилання перестає працювати. Токен підписаний тим самим `SECRET_KEY`, про який ішлося в уроці «Settings: dev проти prod і секрети» — ще одна причина, чому цей ключ не можна лишати в git.
+
+Шаблони теж потрібні власні — Django не малює HTML сам, лише передає контекст. Мінімум чотири файли за іменами, які підставлять views вище:
+
+```html
+{# templates/registration/password_reset_form.html #}
+{% extends "base.html" %}
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Надіслати посилання</button>
+</form>
+{% endblock %}
+```
+
+Сам лист — теж шаблон, а не рядок коду:
+
+```html
+{# templates/registration/password_reset_email.html #}
+Перейди за посиланням, щоб установити новий пароль:
+http://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}
+```
+
+> <i class="bi bi-exclamation-triangle"></i> Лист реально піде лише тоді, коли в `settings.py` налаштований `EMAIL_BACKEND` (урок «Settings: dev проти prod і секрети»). У розробці типово стоїть `console.EmailBackend` — посилання не приходить на пошту, а друкується в термінал, де запущено `runserver`; це нормально й саме там його шукають під час тестування форми.
+
 ## Де це в проєкті
 
 Ці елементи покривають увесь життєвий цикл користувача — у будь-якому домені:
@@ -270,6 +322,7 @@ LOGIN_REDIRECT_URL = 'home'
 - **Захищені сторінки** — написати відгук, оформити замовлення, кабінет автора — `@login_required` або `LoginRequiredMixin`.
 - **«Мої дані»** — `Review.objects.filter(author=request.user)`, `Order.objects.filter(customer=request.user)`.
 - **Вихід** — `logout()` → `redirect` на головну.
+- **Забув пароль** — готовий флоу з чотирьох views: форма email → лист із посиланням → форма нового пароля → підтвердження.
 
 ## Типові помилки / Нюанси
 
@@ -283,6 +336,7 @@ LOGIN_REDIRECT_URL = 'home'
 | `authenticate()` без наступного `login()` | Дані перевірені, але сесія не відкрита: наступний запит знову анонімний |
 | Перевірка прав лише в шаблоні | Прихована кнопка не захищає адресу: доступ обмежують у view |
 | Пряме звернення до `User` у перевикористовуваному коді | Проєкт може мати власну модель користувача; беруть `get_user_model()` або `settings.AUTH_USER_MODEL` |
+| Немає шаблону `registration/password_reset_email.html` | `TemplateDoesNotExist` при спробі скинути пароль — Django не малює лист сам |
 
 ## Підсумок
 
@@ -293,5 +347,6 @@ LOGIN_REDIRECT_URL = 'home'
 - **`request.user`** доступний усюди; **`request.user.is_authenticated`** (атрибут, без дужок) відрізняє гостя від увійшлого.
 - Ланцюжок «звідки сторінка знає, хто ти»: cookie `sessionid` → `SessionMiddleware` → `AuthenticationMiddleware` → `request.user` у view → context processor `auth` → `{{ user }}` у шаблоні. Імпорт `User` потрібен лише для **запитів до таблиці** користувачів, а не для доступу до поточного.
 - **`@login_required`** (для функцій) і **`LoginRequiredMixin`** (для класів, ставити зліва) захищають сторінки; `LOGIN_URL` і `LOGIN_REDIRECT_URL` керують перенаправленнями.
+- **Скидання пароля** — готовий комплект із чотирьох views (`PasswordResetView` → `...Done` → `...Confirm` → `...Complete`); свої лише шаблони. Посилання в листі одноразове й підписане `SECRET_KEY`; лист реально йде лише за налаштованого `EMAIL_BACKEND`.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/auth/default/" target="_blank" rel="noopener">Using the authentication system <i class="bi bi-box-arrow-up-right"></i></a></div></div>

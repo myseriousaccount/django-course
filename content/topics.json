@@ -139,7 +139,7 @@
 
     { "id": "django-auth-helpers", "section": "users", "icon": "bi-key",
       "title": "Автентифікація",
-      "summary": "authenticate, login, logout, request.user, @login_required, create_user і ланцюжок, яким сторінка дізнається поточного користувача." },
+      "summary": "authenticate, login, logout, request.user, @login_required, create_user, скидання пароля (PasswordResetView) і ланцюжок, яким сторінка дізнається поточного користувача." },
 
     { "id": "django-messages", "section": "users", "icon": "bi-chat-dots",
       "title": "Повідомлення",
@@ -147,7 +147,7 @@
 
     { "id": "django-admin-customization", "section": "users", "icon": "bi-tools",
       "title": "Адмін-панель",
-      "summary": "ModelAdmin: list_display, list_filter, search_fields, @admin.register, inlines, actions, fieldsets, UserAdmin. get_queryset/save_model/has_*_permission і власний SimpleListFilter для нестандартних кейсів." },
+      "summary": "ModelAdmin: list_display, list_filter, search_fields, @admin.register, inlines, actions (зокрема експорт у CSV), fieldsets, UserAdmin. get_queryset/save_model/has_*_permission і власний SimpleListFilter." },
 
     { "id": "django-admin-fields", "section": "users", "icon": "bi-sliders",
       "title": "Адмінка: зручні поля й віджети",
@@ -183,7 +183,7 @@
 
     { "id": "django-settings-envs", "section": "architecture", "icon": "bi-shield-lock",
       "title": "dev vs prod і секрети",
-      "summary": "DEBUG, SECRET_KEY, ALLOWED_HOSTS, винесення секретів у env-змінні, чому не можна тримати ключі в коді." },
+      "summary": "DEBUG, SECRET_KEY, ALLOWED_HOSTS, свої сторінки 404/500, EMAIL_BACKEND, винесення секретів у env-змінні, чому не можна тримати ключі в коді." },
 
     { "id": "django-signals", "section": "architecture", "icon": "bi-broadcast-pin",
       "title": "Сигнали (signals)",
