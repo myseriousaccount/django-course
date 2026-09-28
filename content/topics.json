@@ -105,6 +105,10 @@
       "title": "Пагінація",
       "summary": "Paginator, get_page, has_next/has_previous, num_pages: розбивка довгих списків (статті, товари, книги) на сторінки, у view і в шаблоні." },
 
+    { "id": "django-filtering", "section": "templates", "icon": "bi-filter",
+      "title": "Фільтрація списку",
+      "summary": "GET-форма, request.GET.get/getlist і послідовні .filter(): звуження списку за одним чи кількома полями, діапазоном значень і позначеним вибором у формі після оновлення." },
+
     { "id": "django-context-processors", "section": "templates", "icon": "bi-globe",
       "title": "Context processors",
       "summary": "Як передати дані в КОЖЕН шаблон без повторення у views: власний процесор контексту й реєстрація в settings. Приклад — категорії/кошик у шапці на всіх сторінках." },
