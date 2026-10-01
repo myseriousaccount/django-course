@@ -123,15 +123,11 @@
 
     { "id": "django-forms", "section": "forms", "icon": "bi-input-cursor-text",
       "title": "Форми",
-      "summary": "forms.Form проти ModelForm, cleaned_data, is_valid(), валідація clean_*, рендер у шаблоні й збереження через form.save()." },
+      "summary": "forms.Form проти ModelForm, поля й віджети, перевірка даних (validators, clean_<field>(), clean(), файли), рендер у шаблоні й збереження через form.save()." },
 
     { "id": "django-validation", "section": "forms", "icon": "bi-check2-circle",
       "title": "Валідація: клієнт і сервер",
       "summary": "Що гарантує кожен рівень перевірки, чому модель не валідує себе сама і як перевіряти дані без форми: ручні if, full_clean(), validate_password()." },
-
-    { "id": "django-form-validation", "section": "forms", "icon": "bi-ui-checks",
-      "title": "Валідація у формах",
-      "summary": "Чотири механізми форми в порядку виконання: validators, clean_<field>(), clean(), паролі. Перевірка файлів і виведення помилок у шаблоні." },
 
     { "id": "django-registration-example", "section": "forms", "icon": "bi-person-plus",
       "title": "Наскрізний приклад: реєстрація",

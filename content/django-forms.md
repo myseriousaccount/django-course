@@ -147,9 +147,9 @@ class OrderForm(forms.Form):
 >         widgets = {'body': forms.Textarea(attrs={'rows': 10})}
 > ```
 
-## Валідація
+## Перевірка даних форми
 
-Три рівні перевірки в порядку виконання: вбудована перевірка полів, власне правило для одного поля, правило для кількох полів разом.
+Чотири механізми спрацьовують по черзі: готові валідатори поля, власне правило для одного поля, правило для кількох полів разом, і окремо — файли. Принцип «сервер ніколи не довіряє даним із браузера» — в уроці «Валідація: клієнт і сервер»; тут — лише механіка самої форми.
 
 ### is_valid() і cleaned_data
 
@@ -173,6 +173,35 @@ if form.is_valid():
 - `form.cleaned_data['rating']` → значення потрібного типу, уже перевірене.
 
 > <i class="bi bi-exclamation-triangle"></i> Не звертайся до `cleaned_data` до виклику `is_valid()` — до валідації цього словника ще не існує, буде помилка. Спершу `is_valid()`, потім `cleaned_data`.
+
+### Готові валідатори поля: validators=[...]
+
+Коли перевірка вже існує як готова функція, не варто писати під неї `clean_<field>()` — досить причепити її до поля:
+
+```python
+# library/forms.py
+from django import forms
+from django.core.validators import MinValueValidator, RegexValidator
+
+
+class BookForm(forms.Form):
+    isbn = forms.CharField(
+        max_length=13,
+        validators=[RegexValidator(r'^\d{13}$', message='ISBN має складатися з 13 цифр.')],
+    )
+    published_year = forms.IntegerField(
+        validators=[MinValueValidator(1450, message='Рік видання виглядає нереальним.')],
+    )
+```
+
+| Валідатор | Що перевіряє |
+|---|---|
+| `MinValueValidator(x)` / `MaxValueValidator(x)` | число не менше / не більше за `x` |
+| `MinLengthValidator(n)` / `MaxLengthValidator(n)` | довжину тексту |
+| `RegexValidator(pattern)` | відповідність регулярному виразу (як будувати власний — урок «Регулярні вирази») |
+| `EmailValidator()` | коректність email (те саме вже робить сам `EmailField`) |
+
+Порядок виконання під час `is_valid()`: спершу `validators` кожного поля, потім усі `clean_<field>()`, насамкінець один спільний `clean()`.
 
 ### Власна валідація одного поля: clean_\<field>()
 
@@ -211,6 +240,8 @@ class ReviewForm(forms.Form):
         return text
 ```
 
+> <i class="bi bi-info-circle"></i> Поле моделі з `unique=True` (а в `ModelForm` — і `unique_together`) Django перевіряє сама під час `is_valid()`, коректно виключаючи поточний об'єкт при редагуванні. Ручний `clean_<field>()` для унікальності пишуть лише там, де модель цього не описує — наприклад, `email` стандартного `User` **не** `unique=True`. Тоді виключення роблять самі: `User.objects.filter(email=email).exclude(pk=self.instance.pk)`, інакше форма прийме власного користувача за дублікат.
+
 ### Валідація кількох полів разом: clean()
 
 Коли правило зачіпає **два й більше поля** одразу (паролі збігаються, дата «до» не пізніша за «після»), одного `clean_<field>()` замало — потрібен загальний метод `clean(self)`:
@@ -231,6 +262,29 @@ class RegisterForm(forms.Form):
 ```
 
 **Різниця.** `clean_<field>()` бачить **одне** поле й повертає його значення; `clean()` бачить **усі** поля (через `cleaned_data`/`super().clean()`) і повертає весь словник. Помилка з `clean()` за замовчуванням показується вгорі форми (не біля конкретного поля).
+
+### Валідація файлів
+
+`FileField`/`ImageField` (повний цикл завантаження — урок «Файли та зображення») гарантують лише тип файлу. Розмір і дозволені розширення додають окремо — розширення готовим валідатором, розмір у `clean_<field>()`:
+
+```python
+# library/forms.py
+from django.core.validators import FileExtensionValidator
+
+
+class CoverForm(forms.Form):
+    cover = forms.ImageField(
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])]
+    )
+
+    def clean_cover(self):
+        img = self.cleaned_data['cover']
+        if img.size > 2 * 1024 * 1024:          # 2 МБ
+            raise forms.ValidationError('Файл завеликий (максимум 2 МБ).')
+        return img
+```
+
+Без цього хтось завантажить 500-мегабайтний файл чи виконуваний скрипт замість обкладинки.
 
 ## Рендер у шаблоні
 
@@ -271,6 +325,8 @@ class RegisterForm(forms.Form):
   <small>{{ form.email.help_text }}</small>
 </div>
 ```
+
+> <i class="bi bi-pin-angle"></i> Помилки з `clean()`, не прив'язані до жодного поля, у `field.errors` не потрапляють — їх виводять окремо, `{{ form.non_field_errors }}`, зазвичай над усіма полями. `{{ form.as_div }}`/`as_p` домальовують їх самі, без цього рядка.
 
 ## Обробка у view: повний цикл
 
@@ -354,6 +410,8 @@ def contact(request):
 | `clean_<field>()` без `return` | Поле зникає з `cleaned_data` і далі виявляється порожнім |
 | `clean_<field>()` для правила між двома полями | Метод бачить лише своє поле; порівняння паролів чи дат робиться в `clean()` |
 | Форма з файлом без `request.FILES` | Файл не доходить до форми навіть за наявності `enctype` |
+| Файл приймають без перевірки розміру й розширення | `ImageField` гарантує лише те, що це зображення; розмір і тип файлу перевіряють окремо |
+| Унікальність поля без `.exclude(pk=self.instance.pk)` при редагуванні | Форма вважає поточний об'єкт власним дублікатом і не дає зберегти |
 | `form.save()` у `forms.Form` | Методу немає: він існує лише у `ModelForm`, для звичайної форми дані беруть із `cleaned_data` |
 | Поле, якого немає у формі, заповнюють після `save()` | Об'єкт уже записаний без нього; автора чи покупця проставляють через `save(commit=False)` |
 | `render` замість `redirect` після успіху | Оновлення сторінки повторно надсилає форму |
@@ -363,8 +421,9 @@ def contact(request):
 
 - **`forms.Form`** — поля вручну, коли нема моделі (контакти, пошук, відгук). **`forms.ModelForm`** — поля з моделі + метод `save()`, коли створюєш/редагуєш об'єкт (стаття, товар). Правило: зберігаєш у БД — `ModelForm`.
 - **Поле** відповідає за дані й тип (`CharField`, `EmailField`, `ChoiceField`, `DecimalField`…), **віджет** — за вигляд (`Textarea`, `PasswordInput`, `RadioSelect`, `Select`). Тип валідує безкоштовно.
-- Валідація: спершу **`is_valid()`**, лише потім **`cleaned_data`** (очищені, типізовані значення). Одне поле — **`clean_<field>()`** (повертає значення); кілька полів разом — **`clean()`** (повертає словник).
-- У шаблоні: `{{ form.as_div }}` (сучасний дефолт) + **обов'язковий `{% csrf_token %}`** (без нього — 403); поля можна рендерити й поокремо.
+- Валідація виконується по черзі: `validators=[...]` поля → **`is_valid()`** дає **`cleaned_data`** (очищені, типізовані значення) → `clean_<field>()` (одне поле, повертає значення) → `clean()` (усі поля, повертає словник). Файли перевіряють окремо: розширення `FileExtensionValidator`, розмір — у `clean_<field>()`.
+- `unique=True` моделі `ModelForm` перевіряє сама, виключаючи поточний об'єкт; ручний `clean_<field>()` для унікальності пишуть лише там, де модель цього не описує.
+- У шаблоні: `{{ form.as_div }}` (сучасний дефолт) + **обов'язковий `{% csrf_token %}`** (без нього — 403); поля можна рендерити й поокремо, а помилки `clean()` — через `{{ form.non_field_errors }}`.
 - У view один патерн на GET і POST: `if request.method == 'POST'` → `form = MyForm(request.POST)` → `is_valid()` → `form.save()` або обробка `cleaned_data` → `redirect` (Post/Redirect/Get). `save(commit=False)` — коли треба доповнити об'єкт (автор, покупець) перед записом.
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/forms/" target="_blank" rel="noopener">Working with forms <i class="bi bi-box-arrow-up-right"></i></a></div></div>
