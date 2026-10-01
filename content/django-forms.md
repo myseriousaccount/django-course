@@ -2,53 +2,25 @@
 
 Форма — клас, який описує набір полів, виводить їх у HTML, перевіряє надіслані дані й повертає їх приведеними до потрібних типів. Вона стоїть між сирим `request.POST` і логікою застосунку: без неї кожне значення довелося б діставати, перевіряти й перетворювати вручну.
 
-## Form проти ModelForm: коли який
+## Form чи ModelForm: коли який
 
 Django має два класи форм, і вибір між ними — перше рішення в кожній задачі.
 
 > **`forms.Form`** — форма, поля якої ти описуєш **вручну**. Вона не прив'язана до жодної моделі.
 > **`forms.ModelForm`** — форма, поля якої Django **виводить із моделі** автоматично й дає метод `save()`.
 
-**`forms.Form` — поля вручну (контактна форма):**
-
-```python
-# pages/forms.py
-from django import forms
-
-
-class ContactForm(forms.Form):
-    name = forms.CharField(max_length=100, label='Ваше ім\'я')
-    email = forms.EmailField(label='Email для відповіді')
-    subject = forms.CharField(max_length=150, label='Тема')
-    message = forms.CharField(widget=forms.Textarea, label='Повідомлення')
-```
-
-Бери її, коли **немає моделі** для збереження: контактна форма (лист іде на пошту), пошук, фільтр каталогу, форма зворотного зв'язку.
-
-**`forms.ModelForm` — форма з моделі (стаття блогу):**
-
-```python
-# blog/forms.py
-from django import forms
-
-from .models import Article
-
-
-class ArticleForm(forms.ModelForm):
-    class Meta:
-        model = Article
-        fields = ['title', 'slug', 'body', 'is_published']
-        # або fields = '__all__' — усі поля моделі
-        # або exclude = ['author'] — усі, крім перелічених
-```
-
-Бери її, коли форма **створює чи редагує об'єкт моделі**: стаття блогу, товар у магазині, профіль. `ModelForm` сама зчитає типи полів із моделі й отримає метод `save()`, що пише в БД.
+| Ситуація | Клас |
+|---|---|
+| Контактна форма, пошук, фільтр каталогу — зберігати нема чого | `forms.Form` |
+| Стаття блогу, товар, профіль — форма створює чи редагує об'єкт моделі | `forms.ModelForm` |
 
 > <i class="bi bi-info-circle"></i> Правило вибору просте: **зберігаєш у модель — `ModelForm`; не зберігаєш — `Form`**. `ModelForm` — це DRY у дії: не дублюєш опис полів, які вже є в моделі.
 
+Як оголосити форму кожного типу й повністю провести її через view — у двох розділах нижче: «forms.Form: повний цикл» і «ModelForm: повний цикл».
+
 ## Поля форми
 
-Поле (`Field`) описує **один рядок введення**: його тип, чи обов'язкове воно, які обмеження і як валідується. Тип поля визначає, як значення буде перевірено й перетворено.
+Поле (`Field`) описує **один рядок введення**: його тип, чи обов'язкове воно, які обмеження і як валідується. Тип поля визначає, як значення буде перевірено й перетворено. Нижче — `forms.Form`, де кожне поле описують вручну; як ці самі типи полів бере з моделі `ModelForm` — у розділі «ModelForm: повний цикл» нижче.
 
 Кожне поле — окремий клас із модуля `forms`:
 
@@ -137,15 +109,7 @@ class OrderForm(forms.Form):
 
 Розділення «поле / віджет» дає гнучкість: логіку валідації (email є email) описуєш один раз, а вигляд змінюєш під дизайн — випадний список чи радіокнопки, з класом Bootstrap чи без.
 
-> <i class="bi bi-info-circle"></i> У `ModelForm` віджети перевизначають у `Meta.widgets`:
-> ```python
-> # blog/forms.py
-> class ArticleForm(forms.ModelForm):
->     class Meta:
->         model = Article
->         fields = ['title', 'body']
->         widgets = {'body': forms.Textarea(attrs={'rows': 10})}
-> ```
+> <i class="bi bi-info-circle"></i> У `ModelForm` той самий віджет задають інакше — через `Meta.widgets`, без аргументу `widget=` у полі. Приклад — у розділі «ModelForm: повний цикл» нижче.
 
 ## Перевірка даних форми
 
@@ -328,43 +292,30 @@ class CoverForm(forms.Form):
 
 > <i class="bi bi-pin-angle"></i> Помилки з `clean()`, не прив'язані до жодного поля, у `field.errors` не потрапляють — їх виводять окремо, `{{ form.non_field_errors }}`, зазвичай над усіма полями. `{{ form.as_div }}`/`as_p` домальовують їх самі, без цього рядка.
 
-## Обробка у view: повний цикл
+## forms.Form: повний цикл
 
-Одна view-функція обробляє **обидва випадки**: показ порожньої форми (GET) і прийом заповненої (POST). Це стандартний патерн Django.
+Поля описуєш вручну (розділ «Поля форми» вище). Приклад — контактна форма: зберігати нема чого, лист просто йде поштою.
 
 ```python
-# blog/views.py
-from django.shortcuts import redirect, render
-
-from .forms import ArticleForm
+# pages/forms.py
+from django import forms
 
 
-def create_article(request):
-    if request.method == 'POST':
-        form = ArticleForm(request.POST, request.FILES)  # зв'язуємо з даними
-        if form.is_valid():
-            form.save()                 # ModelForm: створює й пише об'єкт у БД
-            return redirect('article_list')
-        # якщо НЕ валідна — просто падаємо нижче й показуємо форму з помилками
-    else:
-        form = ArticleForm()            # GET: порожня форма
-
-    return render(request, 'blog/create.html', {'form': form})
+class ContactForm(forms.Form):
+    name = forms.CharField(max_length=100, label='Ваше ім\'я')
+    email = forms.EmailField(label='Email для відповіді')
+    subject = forms.CharField(max_length=150, label='Тема')
+    message = forms.CharField(widget=forms.Textarea, label='Повідомлення')
 ```
 
-Розбір кроків:
-
-1. **GET** (перший захід) → `ArticleForm()` без даних → порожня форма.
-2. **POST** (надіслали) → `ArticleForm(request.POST)` → форма, зв'язана з даними.
-3. `is_valid()` → перевірка.
-4. Валідна → `form.save()` (для `ModelForm`) → `redirect`.
-5. Невалідна → той самий `render`, але форма вже містить введені дані **й тексти помилок**.
-
-**А для `forms.Form` без моделі** (контактна форма) кроки ті самі, але замість `save()` ти сама вирішуєш, що робити з `cleaned_data`:
+Одна view-функція обробляє обидва випадки — показ порожньої форми (GET) і прийом заповненої (POST):
 
 ```python
 # pages/views.py
 from django.core.mail import send_mail
+from django.shortcuts import redirect, render
+
+from .forms import ContactForm
 
 
 def contact(request):
@@ -380,26 +331,74 @@ def contact(request):
     return render(request, 'pages/contact.html', {'form': form})
 ```
 
+1. **GET** → `ContactForm()` без даних → порожня форма.
+2. **POST** → `ContactForm(request.POST)` → форма, зв'язана з даними.
+3. `is_valid()` → перевірка (механіка — розділ «Перевірка даних форми» вище).
+4. Валідна → робиш щось із `form.cleaned_data` сама (тут — `send_mail()`) → `redirect`.
+5. Невалідна → той самий `render`, форма вже містить введені дані й тексти помилок.
+
+У `forms.Form` немає методу `save()` — зберігати нема чого, тому результат валідації береш напряму з `cleaned_data`, як у кроці 4.
+
 > <i class="bi bi-info-circle"></i> `send_mail()` сам нічого не надсилає — куди насправді йде лист (термінал у розробці чи реальний SMTP на проді), задає `EMAIL_BACKEND`. Розібрано в уроці «Settings: dev проти prod і секрети».
 
-> <i class="bi bi-info-circle"></i> `request.FILES` додають другим аргументом, лише якщо у формі є `FileField`/`ImageField` (наприклад, обкладинка статті). Для звичайних форм досить `request.POST`.
+> <i class="bi bi-pin-angle"></i> Патерн «POST → обробка → **redirect**» (а не рендер одразу після успіху) називають **Post/Redirect/Get**. Він рятує від повторного надсилання форми при оновленні сторінки (F5) — і так само працює для `ModelForm` нижче.
 
-## Про form.save() у ModelForm
+## ModelForm: повний цикл
 
-- Метод є **тільки в `ModelForm`** (у `forms.Form` його немає).
-- `form.save()` створює й зберігає об'єкт, повертаючи його.
-- `form.save(commit=False)` — створює об'єкт, але **не пише в БД**. Потрібно, коли треба доповнити об'єкт перед збереженням:
+Поля Django бере з моделі сама — вказуєш лише модель і перелік полів у `Meta`:
 
-  ```python
-  # blog/views.py
-  article = form.save(commit=False)
-  article.author = request.user     # проставляємо автора вручну (його немає у формі)
-  article.save()                    # тепер пишемо в БД
-  ```
+```python
+# blog/forms.py
+from django import forms
+
+from .models import Article
+
+
+class ArticleForm(forms.ModelForm):
+    class Meta:
+        model = Article
+        fields = ['title', 'slug', 'body', 'is_published']
+        # або fields = '__all__' — усі поля моделі
+        # або exclude = ['author'] — усі, крім перелічених
+        widgets = {'body': forms.Textarea(attrs={'rows': 10})}   # перевизначення віджета
+```
+
+`Meta.widgets` міняє вигляд конкретного поля так само, як аргумент `widget=` у `forms.Form` (розділ «Віджети» вище) — тип поля й валідація не змінюються.
+
+View веде той самий GET/POST-патерн, що й у `forms.Form`, але замість ручної обробки `cleaned_data` — готовий `form.save()`:
+
+```python
+# blog/views.py
+from django.shortcuts import redirect, render
+
+from .forms import ArticleForm
+
+
+def create_article(request):
+    if request.method == 'POST':
+        form = ArticleForm(request.POST, request.FILES)   # FILES — якщо є файлове поле
+        if form.is_valid():
+            form.save()                 # створює й пише об'єкт у БД
+            return redirect('article_list')
+    else:
+        form = ArticleForm()
+    return render(request, 'blog/create.html', {'form': form})
+```
+
+`form.save()` створює й зберігає об'єкт, повертаючи його. Коли перед записом треба доповнити об'єкт полем, якого немає у формі (автор, покупець), пишуть `save(commit=False)` — об'єкт створюється, але в БД ще не потрапляє:
+
+```python
+# blog/views.py
+article = form.save(commit=False)
+article.author = request.user     # поля немає у формі — проставляємо вручну
+article.save()                    # тепер пишемо в БД
+```
 
 Той самий прийом — для замовлення в магазині: `order = form.save(commit=False)`, `order.customer = request.user`, `order.save()`.
 
-> <i class="bi bi-pin-angle"></i> Патерн «POST → обробка → **redirect**» (а не просто рендер після успіху) називають **Post/Redirect/Get**. Він рятує від повторного надсилання форми при оновленні сторінки (F5).
+> <i class="bi bi-exclamation-triangle"></i> `form.save()` є лише в `ModelForm`. На `forms.Form` цей виклик впаде з `AttributeError` — дані звідти беруть напряму з `cleaned_data` (розділ «forms.Form: повний цикл» вище).
+
+> <i class="bi bi-info-circle"></i> `request.FILES` передають другим аргументом лише тоді, коли у формі є `FileField`/`ImageField` — байдуже, `Form` це чи `ModelForm`. Для форм без файлів досить `request.POST`.
 
 ## Типові помилки / Нюанси
 
@@ -424,6 +423,6 @@ def contact(request):
 - Валідація виконується по черзі: `validators=[...]` поля → **`is_valid()`** дає **`cleaned_data`** (очищені, типізовані значення) → `clean_<field>()` (одне поле, повертає значення) → `clean()` (усі поля, повертає словник). Файли перевіряють окремо: розширення `FileExtensionValidator`, розмір — у `clean_<field>()`.
 - `unique=True` моделі `ModelForm` перевіряє сама, виключаючи поточний об'єкт; ручний `clean_<field>()` для унікальності пишуть лише там, де модель цього не описує.
 - У шаблоні: `{{ form.as_div }}` (сучасний дефолт) + **обов'язковий `{% csrf_token %}`** (без нього — 403); поля можна рендерити й поокремо, а помилки `clean()` — через `{{ form.non_field_errors }}`.
-- У view один патерн на GET і POST: `if request.method == 'POST'` → `form = MyForm(request.POST)` → `is_valid()` → `form.save()` або обробка `cleaned_data` → `redirect` (Post/Redirect/Get). `save(commit=False)` — коли треба доповнити об'єкт (автор, покупець) перед записом.
+- У view один патерн на GET і POST для обох класів: `if request.method == 'POST'` → `form = MyForm(request.POST)` → `is_valid()`. Далі розходяться: `ModelForm` викликає `form.save()` (чи `save(commit=False)`, коли перед записом треба доповнити об'єкт — автор, покупець); `forms.Form` сама обробляє `cleaned_data`. В обох випадках після успіху — `redirect`, а не рендер (Post/Redirect/Get).
 
 <div class="dj-docs"><i class="bi bi-book"></i><div><span class="dj-docs-title">Офіційна документація</span><a href="https://docs.djangoproject.com/en/stable/topics/forms/" target="_blank" rel="noopener">Working with forms <i class="bi bi-box-arrow-up-right"></i></a></div></div>
